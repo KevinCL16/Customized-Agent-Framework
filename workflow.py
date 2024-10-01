@@ -52,7 +52,7 @@ def mainworkflow(expert_instruction, simple_instruction, workspace, update_callb
         flush_output()
         novice_log, novice_code = action_agent.run_initial(model, 'novice.png')
         logging.info(novice_log)
-        print('=========Original Code=========')
+        print('=========Using Original Code for Visual Feedback=========')
         flush_output()
 
         if update_callback:
@@ -66,7 +66,11 @@ def mainworkflow(expert_instruction, simple_instruction, workspace, update_callb
             flush_output()
             visual_refine_agent = VisualRefineAgent('novice.png', config, '', simple_instruction)
             visual_feedback = visual_refine_agent.run(model, 'novice', 'novice_final.png')
-            print('=========Visual Feedback=========')
+
+            if update_callback:
+                update_callback(visual_feedback=visual_feedback)
+
+            print('=========Plotting with Visual Feedback=========')
             flush_output()
             final_instruction = '' + '\n\n' + visual_feedback
             action_agent = PlotAgent(config, final_instruction)
@@ -74,8 +78,7 @@ def mainworkflow(expert_instruction, simple_instruction, workspace, update_callb
             logging.info(novice_log)
 
             if update_callback:
-                update_callback(code=novice_code, visual_feedback=visual_feedback,
-                                figure=os.path.join(workspace, 'novice_final.png'))
+                update_callback(figure=os.path.join(workspace, 'novice_final.png'))
 
         result = {
             'code': novice_code,

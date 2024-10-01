@@ -1,22 +1,20 @@
 import os
 import re
-
-
-from .prompt import ERROR_PROMPT, INITIAL_SYSTEM_PROMPT, INITIAL_USER_PROMPT, VIS_SYSTEM_PROMPT, VIS_USER_PROMPT, ZERO_SHOT_COT_PROMPT
+from agents.generic_agent import GenericAgent
 from agents.openai_chatComplete import completion_with_backoff
 from agents.utils import fill_in_placeholders, get_error_message, is_run_code_success, run_code
 from agents.utils import print_filesys_struture
 from agents.utils import change_directory
 
 
-class PlotAgent():
+class PlotAgent(GenericAgent):
 
 
-    def __init__(self, config, query, data_information=None):
+    def __init__(self, workspace, **kwargs):
+        super().__init__(workspace, **kwargs)
         self.chat_history = []
-        self.workspace = config['workspace']
-        self.query = query
-        self.data_information = data_information
+        self.query = kwargs.get('query', '')
+        self.data_information = kwargs.get('data_information', None)
 
     def generate(self, user_prompt, model_type, query_type, file_name):
 
@@ -30,13 +28,13 @@ class PlotAgent():
 
         if query_type == 'initial':
             messages = []
-            messages.append({"role": "system", "content": fill_in_placeholders(INITIAL_SYSTEM_PROMPT, information)})
-            messages.append({"role": "user", "content": fill_in_placeholders(INITIAL_USER_PROMPT, information)})
+            messages.append({"role": "system", "content": fill_in_placeholders(self.prompts['initial']['system'], information)})
+            messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['initial']['user'], information)})
             # print(messages)
         else:
             messages = []
-            messages.append({"role": "system", "content": fill_in_placeholders(VIS_SYSTEM_PROMPT, information)})
-            messages.append({"role": "user", "content": fill_in_placeholders(VIS_USER_PROMPT, information)})
+            messages.append({"role": "system", "content": fill_in_placeholders(self.prompts['vis_refined']['system'], information)})
+            messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['vis_refined']['user'], information)})
             # print(messages)
 
         self.chat_history = self.chat_history + messages
@@ -71,7 +69,6 @@ class PlotAgent():
                     return '\n'.join(code_lines)
         return all_code_blocks_combined
 
-
     def run(self, query, model_type, query_type, file_name):
         try_count = 0
         image_file = file_name
@@ -103,7 +100,7 @@ class PlotAgent():
                 if print_filesys_struture(self.workspace).find('.png') == -1:
                     log = log + '\n' + 'No plot generated.'
                     
-                    self.chat_history.append({"role": "user", "content": fill_in_placeholders(ERROR_PROMPT,
+                    self.chat_history.append({"role": "user", "content": fill_in_placeholders(self.prompts['error'],
                                                                                           {'error_message': f'No plot generated. When you complete a plot, remember to save it to a png file. The file name should be """{image_file}""".',
                                                                                            'data_information': self.data_information})})
                     try_count += 1
@@ -116,7 +113,7 @@ class PlotAgent():
             else:
                 error = get_error_message(log) if error is None else error
                 # TODO error prompt
-                self.chat_history.append({"role": "user", "content": fill_in_placeholders(ERROR_PROMPT,
+                self.chat_history.append({"role": "user", "content": fill_in_placeholders(self.prompts['error'],
                                                                                           {'error_message': error,
                                                                                            'data_information': self.data_information})})
                 try_count += 1

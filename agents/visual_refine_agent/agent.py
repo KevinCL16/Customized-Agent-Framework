@@ -7,7 +7,7 @@ from mimetypes import guess_type
 from .prompt import SYSTEM_PROMPT, USER_PROMPT, ERROR_PROMPT
 from agents.openai_chatComplete import  completion_for_4v
 from agents.utils import fill_in_placeholders
-
+from agents.generic_agent import GenericAgent
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
@@ -33,13 +33,13 @@ def get_code(response):
     return all_code_blocks_combined
 
 
-class VisualRefineAgent:
-    def __init__(self, plot_file, config, code, query):
+class VisualRefineAgent(GenericAgent):
+    def __init__(self, workspace, **kwargs):
+        super().__init__(workspace, **kwargs)
         self.chat_history = []
-        self.plot_file = plot_file
-        self.code = code
-        self.query = query
-        self.workspace = config['workspace']
+        self.plot_file = kwargs.get('plot_file', '')
+        self.code = kwargs.get('code', '')
+        self.query = kwargs.get('query', '')
 
     def run(self, model_type, query_type, file_name):
         plot = os.path.join(self.workspace, self.plot_file)

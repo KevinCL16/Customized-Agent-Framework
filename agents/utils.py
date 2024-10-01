@@ -8,12 +8,12 @@ from typing import Dict
 import os
 from contextlib import contextmanager
 
+
 @contextmanager
 def change_directory(directory):
     current_directory = os.getcwd()
     
     try:
-
         print("Changing directory to:", directory)
         os.chdir(directory)
         yield 
@@ -95,8 +95,8 @@ def get_code(response):
 def run_code(workspace, code_file, log_file=None)->str:
     if log_file is None:
         log_file = code_file + '.log'
-    with change_directory(workspace):
 
+    with change_directory(workspace):
         os.system(f'python "{code_file}" > "{log_file}" 2>&1')
         with open(log_file,'r') as f:
             log = f.read()

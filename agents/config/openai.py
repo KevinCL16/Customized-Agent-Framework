@@ -1,3 +1,3 @@
-API_KEY=''
-BASE_URL=''
+API_KEY='0'
+BASE_URL='0'
 temperature=0

@@ -5,6 +5,8 @@ import shutil
 import subprocess
 import sys
 from agents.utils import change_directory
+from datetime import datetime
+from abc import ABC, abstractmethod
 
 def prepare_data(input_data, data_ids=None, data_range=None):
     with open(input_data, 'r') as f:
@@ -18,6 +20,30 @@ def prepare_data(input_data, data_ids=None, data_range=None):
     
     return instructions
 
+class OutputHandler(ABC):
+    @abstractmethod
+    def handle(self, method_output, agent_name, method_name, individual_workspace, args):
+        pass
+
+class CodeOutputHandler(OutputHandler):
+    def handle(self, method_output, agent_name, method_name, individual_workspace, args):
+        log, code = method_output
+        file_name = f'code_action_{agent_name}_{method_name}.py'
+        with open(os.path.join(individual_workspace, file_name), 'w') as f:
+            f.write(code)
+        return log, code, file_name
+
+class AnalysisOutputHandler(OutputHandler):
+    def handle(self, method_output, agent_name, method_name, individual_workspace, args):
+        # Assuming the analysis output is a dictionary with 'log' and 'result' keys
+        log, verifier_result = method_output
+        error_message = verifier_result.get('log', '')
+        wrong_code = verifier_result.get('code', '')
+        file_name = f'analysis_{agent_name}_{method_name}.txt'
+        with open(os.path.join(individual_workspace, file_name), 'w') as f:
+            f.write(f"Log:\n{log}\n\nError message:\n{error_message}\n\nWrong code:\n{wrong_code}")
+        return log, error_message, file_name
+
 class AgentEnvironment:
     def __init__(self, workspace, config):
         self.workspace = workspace
@@ -26,6 +52,11 @@ class AgentEnvironment:
         self.data_store = {}
         self.instructions = None
         self.data_folder = config.get('data_folder', './InfiAgent_data/da-dev-tables')
+        self.log_file = os.path.join(workspace, 'agent_workflow.log')
+        self.output_handlers = {
+            'code': CodeOutputHandler(),
+            'analysis': AnalysisOutputHandler(),
+        }
 
     def add_agent(self, agent_name, agent_class, **kwargs):
         self.agents[agent_name] = agent_class(self.workspace, **kwargs)
@@ -60,7 +91,7 @@ class AgentEnvironment:
         workspace_list = []
         for instruction in self.instructions:
             d_id = instruction['id']
-            individual_directory = self.workspace + f'/example {d_id}'
+            individual_directory = self.workspace + f'/example {d_id}/'
             workspace_list.append(individual_directory)
 
             file_name = instruction.get('file_name')
@@ -76,25 +107,44 @@ class AgentEnvironment:
 
     def execute_code(self, file_name, individual_workspace):
         with change_directory(individual_workspace):
-            file_path = os.path.join(individual_workspace, file_name)
+            file_path = file_name
             if not os.path.exists(file_path):
                 return f"Error: File {file_name} not found in workspace."
 
             try:
-                # TODO: save execution artifacts into log and png
                 result = subprocess.run(
                     [sys.executable, file_path],
                     capture_output=True,
-                    text=True,
-                    cwd=self.workspace
+                    text=True
                 )
                 return result.stdout + result.stderr
             except Exception as e:
                 return f"Error executing {file_name}: {str(e)}"
 
+    def log_action(self, action, agent_name, method_name, code, log, individual_workspace):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = f"""
+{'='*80}
+TIMESTAMP: {timestamp}
+ACTION: {action.upper()}
+AGENT: {agent_name}
+METHOD: {method_name}
+WORKSPACE: {individual_workspace}
+{'='*80}
+
+LOG OUTPUT:
+{log}
+
+{'='*80}
+"""
+        individual_log_file = os.path.join(individual_workspace, f'{agent_name}_{method_name}_log.txt')
+        with open(individual_log_file, 'a') as f:
+            f.write(log_entry)
+        
+        return log_entry  # Return the log entry
 
     def is_execution_successful(self, log):
-        return 'Traceback (most recent call last):' not in log or 'Error:' not in log
+        return 'Traceback (most recent call last):' not in log and 'Incorrect Answer:' not in log and 'Error:' not in log
 
     def run_workflow(self, workflow):
         results = {}
@@ -114,7 +164,8 @@ class AgentEnvironment:
             agent_name = step['agent']
             method_name = step['method']
             args = step.get('args', {})
-            
+            output_type = step.get('output_type', 'code')  # Default to 'code' if not specified
+
             if self.instructions:
                 args['queries'] = self.instructions
             else:
@@ -127,23 +178,83 @@ class AgentEnvironment:
 
             agent = self.agents[agent_name]
             method = getattr(agent, method_name)
-            method_output = method(**args)
+            
+            step_results = []
+            for instruction, individual_workspace in zip(self.instructions, workspace_list):
+                args['queries'] = instruction
+                method_output = method(**args)
 
-            # If the result is a tuple containing code, execute it
-            if isinstance(method_output, tuple) and len(method_output) == 2:
-                logs, codes = method_output
-                result = []
-                for log, code, individual_workspace in zip(logs, codes, workspace_list):
-                    file_name = f'code_action_{agent_name}_{method_name}.py'
-                    with open(os.path.join(individual_workspace, file_name), 'w') as f:
-                        f.write(code)
-                    execution_log = self.execute_code(file_name, individual_workspace)
-                    result.append({'log': log + "\n" + execution_log, 'code': code})
+                handler = self.output_handlers.get(output_type)
+                if handler:
+                    log, result, file_name = handler.handle(method_output, agent_name, method_name, individual_workspace, args)
+                    
+                    # Log output generation
+                    generation_log = self.log_action("Generate", agent_name, method_name, result, log, individual_workspace)
+                    full_log = generation_log
+                    
+                    if output_type == 'code':
+                        execution_output = self.execute_code(file_name, individual_workspace)
+                        
+                        # Log code execution
+                        execution_log = self.log_action("Execute", agent_name, method_name, result, execution_output, individual_workspace)
+                        full_log += execution_log
+                        
+                        is_successful = self.is_execution_successful(execution_output)
+                    else:  # output_type == 'analysis'
+                        is_successful = self.is_execution_successful(log)
+                    
+                    if not is_successful:
+                        debug_method = getattr(agent, f"debug_{method_name}", None)
+                        if debug_method:  
+                            while not is_successful:
+                                print(f"Error detected in {file_name}. Initiating debug process.")
+                                debug_args = args.copy()
+                                debug_args['error_message'] = execution_output if output_type == 'code' else log
+                                debug_args['buggy_code'] = result
+                                
+                                debug_output = debug_method(**debug_args)
+                                if isinstance(debug_output, tuple) and len(debug_output) == 2:
+                                    debug_log, debug_code = debug_output
+                                    if debug_code:
+                                        with open(os.path.join(individual_workspace, file_name), 'w') as f:
+                                            f.write(debug_code)
+                                        
+                                        # Log debugging
+                                        debug_log_entry = self.log_action("Debug", agent_name, method_name, debug_code, debug_log, individual_workspace)
+                                        full_log += debug_log_entry
+                                        
+                                        if output_type == 'code':
+                                            execution_output = self.execute_code(file_name, individual_workspace)
+                                            
+                                            # Log execution after debugging
+                                            execution_log = self.log_action("Execute", agent_name, method_name, debug_code, execution_output, individual_workspace)
+                                            full_log += execution_log
+                                            
+                                            is_successful = self.is_execution_successful(execution_output)
+                                        else:
+                                            is_successful = self.is_execution_successful(debug_log)
+                                        
+                                        result = debug_code
+                                    else:
+                                        print(f"Debug method for {method_name} returned None for debug_code.")
+                                        break
+                                else:
+                                    print(f"Debug method for {method_name} did not return expected output.")
+                                    break
+                            
+                            if not is_successful:
+                                print(f"Failed to debug {file_name} after best attempts.")
+                        else:
+                            print(f"No debug method found for {method_name}.")
+                else:
+                    print(f"No handler found for output type: {output_type}")
+
+                step_results.append({'log': full_log, 'result': result})
 
             # Store the output if specified
             if 'output' in step:
-                self.data_store[step['output']] = result
+                self.data_store[step['output']] = step_results
 
-            results[f"{agent_name}_{method_name}"] = result
+            results[f"{agent_name}_{method_name}"] = step_results
         
         return results

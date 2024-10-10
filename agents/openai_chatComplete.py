@@ -31,27 +31,35 @@ def completion_with_backoff(messages, model_type):
             api_key=openai_api_key,
             base_url=openai_api_base,
         )
-        try:
-            response = client.chat.completions.create(
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            try:
+                response = client.chat.completions.create(
 
-                model=model_full_path,
-                messages=messages,
-                temperature=temperature,
-                timeout=30*60,
-                max_tokens=4096,
-                
-            )
-            result = response.choices[0].message
-            answer = result.content
-            return answer
-        except KeyError:
+                    model=model_full_path,
+                    messages=messages,
+                    temperature=temperature,
+                    timeout=30*60,
+                    max_tokens=4096,
+                    
+                )
+                result = response.choices[0].message
+                answer = result.content
+                if answer:  # 如果answer不为空，直接返回
+                    return answer
+                # 如果answer为空且不是最后一次尝试，继续下一次循环
+                if attempt < max_attempts - 1:
+                    print("API CALL Empty response received. Retrying...")
+                    continue
+            except KeyError:
 
-            return None
-        except openai.BadRequestError as e:
+                return None
+            except openai.BadRequestError as e:
 
-            return e
-
-            
+                return e
+        
+        # 如果所有尝试都失败，返回None
+        return None
 
     else:
         openai.api_key = API_KEY

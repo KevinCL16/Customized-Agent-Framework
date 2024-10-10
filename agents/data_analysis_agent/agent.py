@@ -64,100 +64,102 @@ class DataAnalysisAgent(GenericAgent):
         return all_code_blocks_combined
 
     def run(self, queries, model_type, file_name):
+        log = []
+        code = []
+        
         if queries:
-            log = []
-            code = []
-            for query in queries:
-                input_text = query['question']
-                constraints = query['constraints']
-                format = query['format']
+            for index, query in enumerate([queries], 1):
+                log.append(f"\n--- Processing Query {index} ---")
+                log.append(f"Question ID: {query['id']}")
+                log.append(f"Question: {query['question']}")
+                log.append(f"Constraints: {query['constraints']}")
+                log.append(f"Data File: {query['file_name']}")
+                log.append(f"Expected Format: {query['format']}")
+                log.append(f"Ground Truth: {query['answers']}")
 
                 prompt = f"""Question ID: {query['id']}
-Question: {input_text}
+Question: {query['question']}
                 
-Constraints: {constraints}
+Constraints: {query['constraints']}
+
+Data File Name: {query['file_name']}
                 
-Format: {format}
+Format: {query['format']}
+
+Correct answer: {query['answers']}. Make sure your analysis results are identical with the annotated ground truth.
                 """
 
+                log.append("\nGenerating code...")
                 result = self.generate(prompt, model_type=model_type, file_name=file_name)
-                code.append(self.get_code(result))
-                log.append(f"Generated code:\n{code}\n")
+                generated_code = self.get_code(result)
+                code.append(generated_code)
+                
+                log.append(f"Generated code for Query {index}:")
+                log.append(generated_code)
+                log.append("\n" + "-"*50)
         else:
+            log.append("Processing single query...")
+            log.append(f"Query: {self.query}")
+            
             result = self.generate(self.query, model_type=model_type, file_name=file_name)
-            code = self.get_code(result)
-            log = f"Generated code:\n{code}\n"
+            generated_code = self.get_code(result)
+            code = generated_code
+            
+            log.append("\nGenerated code:")
+            log.append(generated_code)
 
-        # Instead of running the code here, we'll return it
-        return log, code
+        # Join the log list into a single string
+        log_string = "\n".join(log)
+        return log_string, ''.join(code)
 
-    def run_initial(self, model_type, file_name):
-        print('========Plot AGENT Expert RUN========')
-        self.chat_history = []
-        log, code = self.run(self.query, model_type, 'initial', file_name)
-        return log, code
-
-    def run_vis(self, model_type, file_name):
-        print('========Plot AGENT Novice RUN========')
-        self.chat_history = []
-        log, code = self.run(self.query, model_type, 'vis_refined', file_name)
-        return log, code
-
-    def run_one_time(self, model_type, file_name,query_type='novice',no_sysprompt=False):
+    def debug_run(self, queries, model_type, file_name, error_message, buggy_code):
+        log = []
         
-        print('========Plot AGENT Novice RUN========')
-        message = []
-        workspace_structure = print_filesys_struture(self.workspace)
+        log.append("=== Debug Run Initiated ===")
+        log.append(f"Model Type: {model_type}")
+        log.append(f"File Name: {file_name}")
         
-        information = {
-            'workspace_structure': workspace_structure,
-            'file_name': file_name,
-            'query': self.query
-        }
-        if no_sysprompt:
-            message.append({"role": "system", "content": ''''''})
-        message.append({"role": "user", "content": fill_in_placeholders(INITIAL_USER_PROMPT, information)})
-        result = completion_with_backoff(message, model_type)
-        if model_type != 'gpt-4':
-            code = self.get_code(result)
-            if code == '':
-                code = self.get_code2(result,file_name)
-                if code == '':
-                    code = result
+        log.append("\n--- Previous Error Information ---")
+        log.append("Error Message:")
+        log.append(error_message)
+        
+        log.append("\nBuggy Code:")
+        log.append(buggy_code)
+        
+        '''log.append("\n--- Original Queries ---")
+        if isinstance(queries, list):
+            for idx, query in enumerate(queries, 1):
+                log.append(f"Query {idx}:")
+                log.append(f"  ID: {query.get('id', 'N/A')}")
+                log.append(f"  Question: {query.get('question', 'N/A')}")
+                log.append(f"  Constraints: {query.get('constraints', 'N/A')}")
+                log.append(f"  File Name: {query.get('file_name', 'N/A')}")
         else:
-            code = self.get_code(result)
-
-
-        file_name = f'code_action_{model_type}_{query_type}_0.py'
-        with open(os.path.join(self.workspace, file_name), 'w') as f:
-            f.write(code)
-        log = run_code(self.workspace, file_name)
-        return log, code
-    def run_one_time_zero_shot_COT(self, model_type, file_name,query_type='novice',no_sysprompt=False):
+            log.append(str(queries))'''
         
-        print('========Plot AGENT Novice RUN========')
-        message = []
-        workspace_structure = print_filesys_struture(self.workspace)
+        debug_prompt = f"""The previous code generated for the data analysis task resulted in an error. 
+        Here's the error message:
         
-        information = {
-            'workspace_structure': workspace_structure,
-            'file_name': file_name,
-            'query': self.query
-        }
-        message.append({"role": "system", "content": ''''''})
-        message.append({"role": "user", "content": fill_in_placeholders(ZERO_SHOT_COT_PROMPT, information)})
-        result = completion_with_backoff(message, model_type)
-        if model_type != 'gpt-4':
-            code = self.get_code(result)
-            if code == '':
-                code = self.get_code2(result,file_name)
-                if code == '':
-                    code = result
-        else:
-            code = self.get_code(result)
+        {error_message}
+        
+        Here's the previous buggy code:
+        
+        {buggy_code}
+        
+        Please review the error message and generate corrected code to address the issue. You can use print() to print out data file structures so that next time it will appear in the error message and you can address specific bugs accordingly.
+        
+        Original queries: {queries}
+        """
 
-        file_name = f'code_action_{model_type}_{query_type}_0.py'
-        with open(os.path.join(self.workspace, file_name), 'w') as f:
-            f.write(code)
-        log = run_code(self.workspace, file_name)
-        return log, code
+        log.append("\n--- Generating Corrected Code ---")
+        result = self.generate(debug_prompt, model_type=model_type, file_name=file_name)
+        corrected_code = self.get_code(result)
+        
+        log.append("Corrected code generated:")
+        log.append(corrected_code)
+        
+        log.append("\n=== Debug Run Completed ===")
+
+        # Join the log list into a single string
+        log_string = "\n".join(log)
+        return log_string, corrected_code

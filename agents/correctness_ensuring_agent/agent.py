@@ -31,11 +31,11 @@ class CorrectnessEnsuringAgent(GenericAgent):
 
         if is_correct:
             log.append("Correct answer obtained.")
-            verified_results.append({'log': execution_log, 'code': code})
+            verified_results.append({'execution_log': execution_log, 'code': code})
         else:
             error_message = f"Incorrect Answer: Answer verification failed. Feedback: {feedback}"
             log.append(error_message)
-            verified_results.append({'log': error_message, 'code': code})
+            verified_results.append({'error_message': error_message, 'code': code})
 
         return log, verified_results
 

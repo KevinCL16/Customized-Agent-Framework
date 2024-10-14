@@ -35,14 +35,22 @@ class CodeOutputHandler(OutputHandler):
 
 class AnalysisOutputHandler(OutputHandler):
     def handle(self, method_output, agent_name, method_name, individual_workspace, args):
-        # Assuming the analysis output is a dictionary with 'log' and 'result' keys
-        log, verifier_result = method_output
-        error_message = verifier_result.get('log', '')
-        wrong_code = verifier_result.get('code', '')
+        log, analysis_result = method_output
+        
         file_name = f'analysis_{agent_name}_{method_name}.txt'
+        
         with open(os.path.join(individual_workspace, file_name), 'w') as f:
-            f.write(f"Log:\n{log}\n\nError message:\n{error_message}\n\nWrong code:\n{wrong_code}")
-        return log, error_message, file_name
+            f.write(f"Log:\n{log}\n\n")
+            f.write("Analysis Result:\n")
+            
+            if isinstance(analysis_result, dict):
+                for key, value in analysis_result.items():
+                    f.write(f"{key}:\n{value}\n\n")
+            else:
+                f.write(str(analysis_result))
+        
+        # 返回日志和分析结果的字符串表示，以及文件名
+        return log, str(analysis_result), file_name
 
 class AgentEnvironment:
     def __init__(self, workspace, config):
@@ -73,25 +81,14 @@ class AgentEnvironment:
         
         self.instructions = instructions
 
-    def copy_data_files(self, data_ids, data_range):
-        if data_ids:
-            for d_id in data_ids:
-                individual_directory = self.workspace + f'/example {d_id}'
-                if not os.path.exists(individual_directory):
-                    os.makedirs(individual_directory, exist_ok=True)
-                    print(f"Directory '{individual_directory}' created successfully.")
-
-        elif data_range:
-            for d_id in data_range:
-                individual_directory = self.workspace + f'/example {d_id}'
-                if not os.path.exists(individual_directory):
-                    os.makedirs(individual_directory, exist_ok=True)
-                    print(f"Directory '{individual_directory}' created successfully.")
-
+    def copy_data_files(self):
         workspace_list = []
         for instruction in self.instructions:
             d_id = instruction['id']
             individual_directory = self.workspace + f'/example {d_id}/'
+            if not os.path.exists(individual_directory):
+                os.makedirs(individual_directory, exist_ok=True)
+                print(f"Directory '{individual_directory}' created successfully.")
             workspace_list.append(individual_directory)
 
             file_name = instruction.get('file_name')
@@ -148,23 +145,24 @@ LOG OUTPUT:
 
     def run_workflow(self, workflow):
         results = {}
-        
-        # Process instruction file
-        if 'input' in workflow[0]:
-            input_file = workflow[0]['input'].get('data')
-            data_ids = workflow[0].get('data_ids')
-            data_range = workflow[0].get('data_range')
-            if input_file:
-                self.process_instruction_file(input_file, data_ids, data_range)
-        
-        # Copy relevant data files & Get test case workspace
-        workspace_list = self.copy_data_files(data_ids, data_range)
 
         for step in workflow:
+            args = step.get('args', {})
             agent_name = step['agent']
             method_name = step['method']
-            args = step.get('args', {})
             output_type = step.get('output_type', 'code')  # Default to 'code' if not specified
+            input_ = step.get('input', {})
+
+            # Process instruction file
+            if 'input' in step:
+                input_file = step['input'].get('data')
+                data_ids = step.get('data_ids')
+                data_range = step.get('data_range')
+
+                if input_file:
+                    self.process_instruction_file(input_file, data_ids, data_range)
+                    # Copy relevant data files & Get test case workspace
+                    workspace_list = self.copy_data_files()
 
             if self.instructions:
                 args['queries'] = self.instructions
@@ -178,9 +176,17 @@ LOG OUTPUT:
 
             agent = self.agents[agent_name]
             method = getattr(agent, method_name)
-            
             step_results = []
+
             for instruction, individual_workspace in zip(self.instructions, workspace_list):
+                for input_name, input_value in input_.items():
+                    if isinstance(input_value, str) and input_name is not 'data' and os.path.isfile(os.path.join(individual_workspace, input_value)):
+                        with open(os.path.join(individual_workspace, input_value), 'r') as file:
+                            content = file.read()
+                        args[input_name] = content
+                    else:
+                        pass
+
                 args['queries'] = instruction
                 method_output = method(**args)
 

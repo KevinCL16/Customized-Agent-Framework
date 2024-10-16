@@ -8,6 +8,7 @@ from agents.utils import change_directory
 from datetime import datetime
 from abc import ABC, abstractmethod
 
+
 def prepare_data(input_data, data_ids=None, data_range=None):
     with open(input_data, 'r') as f:
         instructions = json.load(f)
@@ -20,10 +21,12 @@ def prepare_data(input_data, data_ids=None, data_range=None):
     
     return instructions
 
+
 class OutputHandler(ABC):
     @abstractmethod
     def handle(self, method_output, agent_name, method_name, individual_workspace, args):
         pass
+
 
 class CodeOutputHandler(OutputHandler):
     def handle(self, method_output, agent_name, method_name, individual_workspace, args):
@@ -33,13 +36,14 @@ class CodeOutputHandler(OutputHandler):
             f.write(code)
         return log, code, file_name
 
+
 class AnalysisOutputHandler(OutputHandler):
     def handle(self, method_output, agent_name, method_name, individual_workspace, args):
         log, analysis_result = method_output
         
         file_name = f'analysis_{agent_name}_{method_name}.txt'
         
-        with open(os.path.join(individual_workspace, file_name), 'w') as f:
+        with open(os.path.join(individual_workspace, file_name), 'w', encoding='utf8') as f:
             f.write(f"Log:\n{log}\n\n")
             f.write("Analysis Result:\n")
             
@@ -51,6 +55,7 @@ class AnalysisOutputHandler(OutputHandler):
         
         # 返回日志和分析结果的字符串表示，以及文件名
         return log, str(analysis_result), file_name
+
 
 class AgentEnvironment:
     def __init__(self, workspace, config):
@@ -187,8 +192,13 @@ LOG OUTPUT:
                     else:
                         pass
 
+                agent.workspace = individual_workspace
                 args['queries'] = instruction
-                method_output = method(**args)
+                try:
+                    method_output = method(**args)
+                except Exception as e:
+                    print(f"错误：{e}")
+
 
                 handler = self.output_handlers.get(output_type)
                 if handler:

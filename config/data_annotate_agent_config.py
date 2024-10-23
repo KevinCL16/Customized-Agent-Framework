@@ -26,11 +26,11 @@ WORKFLOW = [
         'agent': 'data_annotate_agent',
         'method': 'run',
         'args': {
-            'model_type': 'claude-3-5-sonnet-20240620',
+            'model_type': 'Qwen/Qwen2.5-7B-Instruct',
             'file_name': 'plot.png'
         },
         'input': {'data': 'InfiAgent_data/hard_modified_da-dev-questions.jsonl'},
-        'data_range': [310, 415],  # Specify the question IDs you want to process
+        'data_range': [7, 39],  # Specify the question IDs you want to process
         'output': 'data_analysis_result',
         'output_type': 'code'  # Specify the output type here
     },

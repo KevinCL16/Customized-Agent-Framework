@@ -26,7 +26,7 @@ WORKFLOW = [
         'agent': 'data_annotate_agent',
         'method': 'run',
         'args': {
-            'model_type': 'Qwen/Qwen2.5-7B-Instruct',
+            'model_type': 'deepseek-ai/DeepSeek-Coder-V2-Instruct',
             'file_name': 'plot.png'
         },
         'input': {'data': 'InfiAgent_data/hard_modified_da-dev-questions.jsonl'},

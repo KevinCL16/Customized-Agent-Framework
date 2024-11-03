@@ -46,7 +46,8 @@ class AnalysisOutputHandler(OutputHandler):
         model_dependent_directory = os.path.join(individual_workspace, model_type)
         os.makedirs(model_dependent_directory, exist_ok=True)
 
-        with open(os.path.join(model_dependent_directory, file_name), 'w', encoding='utf8') as f:
+        # with open(os.path.join(model_dependent_directory, file_name), 'w', encoding='utf8') as f:
+        '''
             f.write(f"Log:\n{log}\n\n")
             f.write("Analysis Result:\n")
 
@@ -54,7 +55,7 @@ class AnalysisOutputHandler(OutputHandler):
                 for key, value in analysis_result.items():
                     f.write(f"{key}:\n{value}\n\n")
             else:
-                f.write(str(analysis_result))
+                f.write(str(analysis_result))'''
 
         # 返回日志和分析结果的字符串表示，以及文件名
         return log, str(analysis_result), file_name
@@ -145,7 +146,7 @@ LOG OUTPUT:
         model_dependent_directory = os.path.join(individual_workspace, model_type)
         os.makedirs(model_dependent_directory, exist_ok=True)
         individual_log_file = os.path.join(model_dependent_directory, f'{agent_name}_{model_type}_log.txt')
-        with open(individual_log_file, 'a') as f:
+        with open(individual_log_file, 'w') as f:
             f.write(log_entry)
 
         return log_entry  # Return the log entry
@@ -208,7 +209,7 @@ LOG OUTPUT:
 
                 handler = self.output_handlers.get(output_type)
                 if handler:
-                    model_type = args['model_type'].replace('Qwen/Qwen', 'Qwen')
+                    model_type = args['model_type'].replace('deepseek-ai/', '')
                     log, result, file_name = handler.handle(method_output, agent_name, model_type,
                                                             individual_workspace, args)
 

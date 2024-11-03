@@ -30,7 +30,7 @@ WORKFLOW = [
         },
         'input': {'data': 'InfiAgent_data/hard_modified_da-dev-questions.jsonl',
                   'code': 'code_action_data_analysis_agent_run.py'},
-        'data_ids': [28, 30],  # Specify the question IDs you want to process
+        'data_ids': [7, 28, 30],  # Specify the question IDs you want to process
         'output': 'error_verifier_result',
         'output_type': 'analysis'  # Specify the output type here
     },

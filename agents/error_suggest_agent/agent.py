@@ -41,7 +41,7 @@ def get_code(response):
 
 def clean_json_string(json_str):
     # Locate the injected_code value
-    start_index = json_str.find('"injected_code": "') + len('"injected_code": "')
+    start_index = json_str.find('"error_code": "') + len('"error_code": "')
     end_index = json_str.find('",', start_index)
 
     # Extract the code part and replace newlines and quotes
@@ -156,8 +156,72 @@ class ErrorSuggestAgent(GenericAgent):
         log.append("\n\n...Generating error types...\n\n")
         result = self.generate(prompt, model_type=model_type, code=code, csv_info=csv_info, concepts=concepts)
 
-        # Use the extracted variables as needed
-        log.append(f"\nSuggest Result:\n{result}\n")
+        '''try:
+            # Locate the first curly brace to the last one for extracting the JSON object
+            start_index = result.find('{')
+            end_index = result.rfind('}')
+
+            if start_index == -1 or end_index == -1:
+                raise ValueError("No valid JSON found in the input string.")
+
+            # Extract the JSON substring
+            json_str = result[start_index:end_index + 1]
+            cleaned_json_str = clean_json_string(json_str)
+
+            # Convert the extracted JSON string to a Python dictionary
+            result_dict = json.loads(cleaned_json_str)
+
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Error decoding JSON: {e}")'''
+
+        try:
+            # Locate the first curly brace to the last one for extracting the JSON object
+            start_index = result.find('{')
+            end_index = result.rfind('}')
+
+            if start_index == -1 or end_index == -1:
+                raise ValueError("No valid JSON found in the input string.")
+
+            # Extract the JSON substring and clean it if necessary
+            json_str = result[start_index:end_index + 1]
+            cleaned_json_str = clean_json_string(json_str)
+
+            # Convert the extracted JSON string to a Python dictionary
+            result_dict = json.loads(cleaned_json_str)
+
+            # Write the entire dictionary as a single line to a jsonl file
+            with open(os.path.join(error_code_directory, 'logical_error_data.jsonl'), 'w') as jsonl_file:
+                jsonl_file.write(json.dumps(result_dict, indent=4) + '\n')
+
+            # Loop through each concept in the dictionary and extract details
+            for concept, entries in result_dict.items():
+                print(f"Concept: {concept}")
+                for idx, entry in enumerate(entries):
+                    injected_code = entry.get('error_code', '')
+                    error_type = entry.get('error_type', '')
+                    error_explanation = entry.get('explanation', '')
+                    expected_outcome = entry.get('expected_outcome', '')
+
+                    file_name = f'logical_error_{concept}_{idx}_injected.py'
+                    with open(os.path.join(error_code_directory, file_name), 'w') as f:
+                        f.write(injected_code)
+                    error_code_result = run_code(error_code_directory, file_name)
+
+                    # Use the extracted variables as needed
+                    log.append(f"\nInjected Code {concept} {idx}:\n{injected_code}\n")
+                    log.append(f"\nError Type {concept} {idx}:\n{error_type}\n")
+                    log.append(f"\nError Explanation {concept} {idx}: {error_explanation}\n")
+                    log.append(f"\nExpected Outcome {concept} {idx}: {expected_outcome}\n")
+                    log.append(f"\nError injected code execution result: {error_code_result}\n")
+                    log.append(f"\n***************************************************************************************\n")
+
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Error decoding JSON: {e}")
+
+        '''# Extract and store the expected result
+        injected_code = result_dict.get('error_code', '')
+        error_explanation = result_dict.get('explanation', '')
+        expected_outcome = result_dict.get('expected_outcome', '')'''
 
         # Wrap the extracted information
         suggest_results.append({

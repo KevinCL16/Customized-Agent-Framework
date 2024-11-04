@@ -97,37 +97,41 @@ ERROR_TYPE_PROMPT = [
     "10. **Feature Correlation Issues**: Ignoring correlations between features, leading to multicollinearity problems in linear models."]
 
 
-INITIAL_SYSTEM_PROMPT = '''You will be provided with an original query and a data analysis code. Your task is to:
+ERROR_VERIFIER_SYSTEM_PROMPT = '''You will be provided with an original query and a data analysis code. Your task is to:
 
-1. Read the Question carefully, determine whether the code has followed the original query requirements, if so, further identify any errors in its data analysis process. **If the code faithfully followed seemingly wrong data analysis practices explicitly stated in the Question. Deem it as correct.**
-2. **Explain** the error, including:
+1. Read the Question carefully, determine whether the code has followed the query requirements, if so, further identify any errors in its data analysis process. **If the code faithfully followed seemingly wrong data analysis practices explicitly stated in the Question. Deem it as correct.**
+2. **Explain** any errors found, including:
    - **Explanation**: Explain why this is an error and what issues it may cause.
    - **Expected Outcome**: Explain how this error will affect the data analysis results, such as misleading outcomes, degraded performance, or incorrect interpretations.
 
 ### Output Format:
 ```json
 {
-  "is_error": "True or False",
-  "error_explanation": [{
-    "error_type": "Specify the type of injected error",
-    "explanation": "Describe why this is an error and its impact on the analysis",
-    "expected_outcome": "Explain how this error will affect model performance, accuracy, or interpretability"
-  },
-  {
-    "error_type": "Specify the type of injected error",
-    "explanation": "Describe why this is an error and its impact on the analysis",
-    "expected_outcome": "Explain how this error will affect model performance, accuracy, or interpretability"
-  },
-  ......
-  
-  ]
+    "is_error": "true/false",
+    "error_explanation": [{
+        "error_type": "Describe the type of error",
+        "explanation": "Detailed explanation of why this is an error and its impact",
+        "expected_outcome": "How this error will affect model performance or results",
+        "suggestions": "Specific suggestions for fixing the error"
+    },
+    {
+        "error_type": "Another error type if multiple errors exist",
+        "explanation": "Explanation for the second error",
+        "expected_outcome": "Expected outcome for the second error",
+        "suggestions": "Suggestions for fixing the second error"
+    }]
 }
 ```
 
-# Note that not only one error could appear in the data analysis code, you should find all errors and list them in the json output.
+Important Notes:
+1. Always provide the output in the exact JSON format specified above
+2. Set "is_error" to "false" if no errors are found
+3. If "is_error" is "false", provide an empty array for error_explanation
+4. If "is_error" is "true", include all identified errors in the error_explanation array
+5. Consider the original query requirements carefully - if the code follows the query's explicit requirements, even if they seem incorrect, consider it correct
 '''
 
-INITIAL_USER_PROMPT = '''You are given the following query and data analysis code.
+ERROR_VERIFIER_USER_PROMPT = '''You are given the following query and data analysis code.
 
 ### Original Query (Read the Question carefully, if the code followed the requirements in the question, even if you feel that incorrect data analysis practice were used, deem it as correct):
 {{query}}
@@ -138,32 +142,23 @@ INITIAL_USER_PROMPT = '''You are given the following query and data analysis cod
 
 
 ### Your Task: 
-1. Read the Question carefully, determine whether the code has followed the query requirements, if so, further identify any errors in its data analysis process. **If the code faithfully followed seemingly wrong data analysis practices explicitly stated in the original query. Deem it as correct. Such as using Linear regression to predict a binary outcome, because the original query asked us to do so!!!**
-2. Explain the error, including:
-   - **Explanation**: Why this is an error and what issues it may cause.
-   - **Expected Outcome**: How this error will affect the analysis results, such as producing misleading conclusions or performance degradation.
-   
+1. Read the Question carefully, determine whether the code has followed the query requirements, if so, further identify any errors in its data analysis process. **If the code faithfully followed seemingly wrong data analysis practices explicitly stated in the original query. Deem it as correct.**
+2. Provide your analysis in the specified JSON format with detailed explanations for each error found.
 
-Please follow the output format below:
+Please provide your analysis in the following format:
 
 ```json
 {
-  "is_error": "True or False",
-  "error_explanation": [{
-    "error_type": "Specify the type of injected error",
-    "explanation": "Describe why this is an error and its impact on the analysis",
-    "expected_outcome": "Explain how this error will affect model performance, accuracy, or interpretability"
-  },
-  {
-    "error_type": "Specify the type of injected error",
-    "explanation": "Describe why this is an error and its impact on the analysis",
-    "expected_outcome": "Explain how this error will affect model performance, accuracy, or interpretability"
-  },
-  ......
-  
-  ]
+    "is_error": "true/false",
+    "error_explanation": [{
+        "error_type": "Describe the type of error",
+        "explanation": "Detailed explanation of why this is an error and its impact",
+        "expected_outcome": "How this error will affect model performance or results",
+        "suggestions": "Specific suggestions for fixing the error"
+    }]
 }
 ```
 
-# Note that not only one error could appear in the data analysis code, you should find all errors and list them in the json output.
+Note: If multiple errors are found, include multiple objects in the error_explanation array.
+If no errors are found, set "is_error" to "false" and provide an empty array for error_explanation.
 '''

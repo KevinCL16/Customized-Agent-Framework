@@ -123,33 +123,49 @@ Correct answer: {query['answers']}. Make sure your analysis results are identica
         log.append("Error Message:")
         log.append(error_message)
         
-        log.append("\nBuggy Code:")
-        log.append(buggy_code)
+        # log.append("\nBuggy Code:")
+        # log.append(buggy_code)
         
-        '''log.append("\n--- Original Queries ---")
-        if isinstance(queries, list):
-            for idx, query in enumerate(queries, 1):
-                log.append(f"Query {idx}:")
-                log.append(f"  ID: {query.get('id', 'N/A')}")
-                log.append(f"  Question: {query.get('question', 'N/A')}")
-                log.append(f"  Constraints: {query.get('constraints', 'N/A')}")
-                log.append(f"  File Name: {query.get('file_name', 'N/A')}")
+        if queries:
+            debug_prompt = f"""The previous code generated for the data analysis task resulted in errors. 
+            Here's the error information:
+            
+            {error_message}
+            
+            Here's the previous code that needs to be fixed:
+            
+            {buggy_code}
+            
+            
+            Please review the error information and generate corrected code that:
+            1. Fixes all identified errors
+            2. Maintains the original functionality
+            3. Follows the output format requirements
+            4. Ensures results match the ground truth
+            """
         else:
-            log.append(str(queries))'''
-        
-        debug_prompt = f"""The previous code generated for the data analysis task resulted in an error. 
-        Here's the error message:
-        
-        {error_message}
-        
-        Here's the previous buggy code:
-        
-        {buggy_code}
-        
-        Please review the error message and generate corrected code to address the issue. You can use print() to print out data file structures so that next time it will appear in the error message and you can address specific bugs accordingly.
-        
-        Original queries: {queries}
-        """
+            debug_prompt = f"""The previous code generated for the data analysis task resulted in errors. 
+            Here's the error information:
+            
+            {error_message}
+            
+            Here's the previous code that needs to be fixed:
+            
+            {buggy_code}
+            
+            Please review the error information and generate corrected code.
+            """
+
+        '''Question
+        ID: {queries['id']}
+        Question: {queries['question']}
+        Constraints: {queries['constraints']}
+        Data
+        File: {queries['file_name']}
+        Expected
+        Format: {queries['format']}
+        Ground
+        Truth: {queries['answers']}'''
 
         log.append("\n--- Generating Corrected Code ---")
         result = self.generate(debug_prompt, model_type=model_type, file_name=file_name)
@@ -160,6 +176,4 @@ Correct answer: {query['answers']}. Make sure your analysis results are identica
         
         log.append("\n=== Debug Run Completed ===")
 
-        # Join the log list into a single string
-        log_string = "\n".join(log)
-        return log_string, corrected_code
+        return '\n'.join(log), corrected_code

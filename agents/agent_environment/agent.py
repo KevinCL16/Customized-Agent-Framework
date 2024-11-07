@@ -36,6 +36,11 @@ class AnalysisOutputHandler(OutputHandler):
         return log, str(analysis_result), file_name
 
 
+class MaxDebugRetriesExceeded(Exception):
+    """当达到最大调试重试次数时抛出的异常"""
+    pass
+
+
 class AgentEnvironment:
     def __init__(self, workspace, config):
         self.workspace = workspace
@@ -124,7 +129,7 @@ LOG OUTPUT:
             self.cleared_log_files.add(individual_log_file)
 
         # 追加写入新的日志
-        with open(individual_log_file, 'a') as f:
+        with open(individual_log_file, 'a', encoding='utf-8') as f:
             f.write(log_entry)
         
         return log_entry
@@ -159,7 +164,7 @@ LOG OUTPUT:
         """处理步骤的输入数据"""
         if 'input' in step:
             input_file = step['input'].get('data')
-            if input_file:
+            if False:
                 self.process_instruction_file(
                     input_file, 
                     step.get('data_ids'), 
@@ -262,14 +267,19 @@ LOG OUTPUT:
         execution_output = self.execute_code(file_name, individual_workspace)
         if not self.is_execution_successful(execution_output):
             retry_time = 0
-            while not self.is_execution_successful(execution_output) and retry_time < 10:
-                result = self._debug_code(
-                    agent_name, model_type, result,
-                    file_name, individual_workspace,
-                    args, execution_output
-                )
+            while not self.is_execution_successful(execution_output) and retry_time < 1:
+                try:
+                    result = self._debug_code(
+                        agent_name, model_type, result,
+                        file_name, individual_workspace,
+                        args, execution_output
+                    )
+                except NotImplementedError as e:
+                    print(f"debug method missing: {e}")
+
                 execution_output = self.execute_code(file_name, individual_workspace)
 
+                print(f"Self-debugging, current retry time: {retry_time}")
                 debug_log = "\n\n*********Debugged Code**********\n\n" + result +"\n\n****************Execution Output***************\n\n" + execution_output + "\n"
 
                 # Log each debug attempt
@@ -282,6 +292,19 @@ LOG OUTPUT:
                     individual_workspace
                 )
                 retry_time += 1
+                
+            if retry_time >= 10:
+                error_msg = f"Maximum debug retries (10) exceeded for instruction {self.current_instruction['id']}"
+                self.log_action(
+                    "Debug Failed",
+                    agent_name,
+                    model_type,
+                    result,
+                    error_msg,
+                    individual_workspace
+                )
+                raise MaxDebugRetriesExceeded(error_msg)
+                
         return result
 
     def _debug_code(self, agent_name, model_type, code, file_name, individual_workspace, args, error_output):
@@ -290,7 +313,7 @@ LOG OUTPUT:
         debug_method = getattr(self.agents[agent_name], f"debug_{method_name}", None)
         if not debug_method:
             print(f"No debug method found for {agent_name}")
-            return code
+            raise NotImplementedError
 
         debug_args = args.copy()
         debug_args.update({
@@ -340,54 +363,59 @@ LOG OUTPUT:
             input_step.get('data_ids'),
             input_step.get('data_range')
         )
+
+        workflow_aux = copy.deepcopy(workflow)
         
         # Now process each instruction
         for instruction in self.instructions:
-            results = {}
-            # Create individual workspace for this instruction
-            individual_workspace = os.path.join(self.workspace, f'example {instruction["id"]}')
-            os.makedirs(individual_workspace, exist_ok=True)
-            
-            # Copy data file if needed
-            if file_name := instruction.get('file_name'):
-                src = os.path.join(self.data_folder, file_name)
-                dst = os.path.join(individual_workspace, file_name)
-                if os.path.exists(src):
-                    shutil.copy(src, dst)
-                else:
-                    print(f"Warning: File {file_name} not found in data folder.")
-            
-            # Store current instruction and workspace
-            self.current_instruction = instruction
-            self.current_workspace = individual_workspace
+            try:
+                results = {}
+                # Create individual workspace for this instruction
+                individual_workspace = os.path.join(self.workspace, f'example {instruction["id"]}')
+                os.makedirs(individual_workspace, exist_ok=True)
+                
+                # Copy data file if needed
+                if file_name := instruction.get('file_name'):
+                    src = os.path.join(self.data_folder, file_name)
+                    dst = os.path.join(individual_workspace, file_name)
+                    if os.path.exists(src):
+                        shutil.copy(src, dst)
+                    else:
+                        print(f"Warning: File {file_name} not found in data folder.")
+                
+                # Store current instruction and workspace
+                self.current_instruction = instruction
+                self.current_workspace = individual_workspace
 
-            workflow_aux = copy.deepcopy(workflow)
-            # Execute each step for this instruction
-            for step, step_aux in zip(workflow, workflow_aux):
-                if step.get('type') == 'loop':
-                    results.update(self._handle_loop_step(step))
-                else:
-                    config_args = step_aux.get('args')
-                    step_results, agent_name, method_name = self._execute_step(step, config_args)
-                    results[f"{agent_name}_{method_name}"] = step_results
-            
-            all_results.append(results)
+                # Execute each step for this instruction
+                for step, step_aux in zip(workflow, workflow_aux):
+                    if step.get('type') == 'loop':
+                        results.update(self._handle_loop_step(step, step_aux))
+                    else:
+                        config_args = step_aux.get('args')
+                        step_results, agent_name, method_name = self._execute_step(step, config_args)
+                        results[f"{agent_name}_{method_name}"] = step_results
+                
+                all_results.append(results)
+                
+            except MaxDebugRetriesExceeded as e:
+                print(f"Aborting instruction {instruction['id']}: {str(e)}")
+                continue  # Skip to next instruction
             
         return all_results
 
-    def _handle_loop_step(self, step):
+    def _handle_loop_step(self, step, step_aux):
         """处理循环步骤"""
         loop_results = {}
         loop_condition = True
-        max_iterations = 10
+        max_iterations = 5
         iteration = 0
-        # 使用深拷贝替代浅拷贝
-        step_aux = copy.deepcopy(step['steps'])
+        step_aux_steps = copy.deepcopy(step_aux['steps'])
         
         while loop_condition and iteration < max_iterations:
             print(f"\n=== Starting iteration {iteration + 1} ===")
             
-            for substep, substep_aux in zip(step['steps'], step_aux):
+            for substep, substep_aux in zip(step['steps'], step_aux_steps):
                 if iteration == 0:
                     # 首次迭代
                     config_args = substep_aux.get('args')
@@ -410,11 +438,14 @@ LOG OUTPUT:
             # 检查循环条件
             verifier_result = self.data_store.get('verification_result', [])
             result_data = verifier_result.get('result')
-            # Convert result_data to a dictionary if it's a string
             if isinstance(result_data, str):
                 result_data = ast.literal_eval(result_data)
-            # Check if 'has_errors' is present and set to True
-            loop_condition = result_data.get('has_errors', 'false').lower() == 'true'
+            loop_condition = result_data.get("result").get('has_errors', True)
+
+            # TODO: NOT APPLICABLE TO ALL AGENT WORKFLOWS
+            if not loop_condition:
+                self._save_correct_code("hard_da-dev-q-code-a.jsonl")
+            # TODO: NOT APPLICABLE TO ALL AGENT WORKFLOWS
 
             print(f"Iteration {iteration + 1}: {'Errors found' if loop_condition else 'No errors found'}")
             iteration += 1
@@ -428,6 +459,12 @@ LOG OUTPUT:
         """执行 debug 步骤"""
         agent = self.agents[step['agent']]
         debug_method = getattr(agent, step['debug_method'])
+        agent_args = step.get('args', {})
+
+        agent_name = step['agent']
+        method_name = step['method']
+        output_type = step.get('output_type', 'code')
+
         
         # 从验证结果中提取错误信息
         error_info = self._extract_error_info(verification_result)
@@ -450,14 +487,19 @@ LOG OUTPUT:
         }
         
         # 执行 debug 方法
-        results = debug_method(**debug_args)
-        
+        method_output = debug_method(**debug_args)
+
+        results = self._handle_method_output(
+            method_output, output_type, agent_name,
+            self.current_workspace, agent_args
+        )
+
         self.log_action(
             "Verifier Debug",
             step['agent'],
             step['args']['model_type'].replace('deepseek-ai/', ''),
-            str(results[1]),
-            results[0],
+            str(results['result']),
+            results['log'],
             self.current_workspace
         )
         
@@ -492,3 +534,29 @@ LOG OUTPUT:
             f"Suggestions: {err['suggestions']}\n"
             for err in error_info
         ])
+
+    def _save_correct_code(self, file_name):
+        """保存正确的代码到jsonl文件"""
+        # 获取当前的分析代码
+        analysis_result = self.data_store.get('data_analysis_result')
+        if isinstance(analysis_result, tuple):
+            correct_code = analysis_result[1]
+        elif isinstance(analysis_result, dict):
+            correct_code = analysis_result.get('result', '')
+        else:
+            print("Warning: Could not extract correct code from analysis result")
+            return
+
+        # 更新当前instruction的内容
+        instruction_with_code = self.current_instruction.copy()
+        instruction_with_code['correct_analysis_code'] = correct_code
+
+        # 创建输出目录（如果不存在）
+        output_dir = os.path.join(self.workspace, 'correct_codes')
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, file_name)
+
+        # 追加写入jsonl文件
+        with open(output_file, 'a', encoding='utf-8') as f:
+            json.dump(instruction_with_code, f, ensure_ascii=False)
+            f.write('\n')

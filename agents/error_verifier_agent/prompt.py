@@ -162,3 +162,62 @@ Please provide your analysis in the following format:
 Note: If multiple errors are found, include multiple objects in the error_explanation array.
 If no errors are found, set "is_error" to "false" and provide an empty array for error_explanation.
 '''
+
+ERROR_EVAL_SYSTEM_PROMPT = '''You will be provided with an original query and a data analysis code. Your task is to:
+
+1. Read the Question carefully, determine whether the code has followed the query requirements, if so, further identify any errors in its data analysis process.
+2. **Explain** any errors found, including:
+   - **Explanation**: Explain why these are errors and what issues they may cause.
+   - **Expected Outcome**: Explain how these errors will affect the data analysis results, such as misleading outcomes, degraded performance, or incorrect interpretations.
+
+### Output Format:
+```json
+{
+    "error_type": "Specify the type of injected error",
+    "explanation": "Describe why these are errors and their impact on the analysis",
+    "expected_outcome": "Explain how these errors will affect model performance, accuracy, or interpretability"
+}
+```
+'''
+
+ERROR_EVAL_USER_PROMPT = '''You are given the following query and data analysis code.
+
+### Original Query:
+{{query}}
+
+
+### Data Analysis Code:
+{{code}}
+
+
+### Your Task: 
+1. Read the Question carefully, determine whether the code has followed the query requirements, if so, further identify any errors in its data analysis process.
+2. Provide your analysis in the specified JSON format with detailed explanations for each error found.
+
+Please provide your analysis in the following format:
+
+```json
+{
+    "error_type": "Specify the type of injected errors",
+    "explanation": "Describe why these are errors and their impact on the analysis",
+    "expected_outcome": "Explain how these errors will affect model performance, accuracy, or interpretability"
+}
+```
+'''
+
+EVAL_PROMPT = '''You are given the following two analysis on whether a piece of code contains errors or not.
+
+### Analysis One:
+{{ground_truth}}
+
+### Analysis Two:
+{{eval_dict}}
+
+Determine if Analysis Two points out the exact same errors as Analysis One:
+
+- If Analysis Two identifies all the same errors (type, location, and severity) as Analysis One, score it **1**.
+- If Analysis Two has partial overlap by identifying some errors correctly but misses or adds other errors, score it **0.5**.
+- If Analysis Two fails to identify any errors present in Analysis One, score it **0**.
+
+Your output format should be: SCORE[1/0.5/0]
+'''

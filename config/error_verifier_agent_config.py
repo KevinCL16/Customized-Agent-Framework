@@ -1,4 +1,4 @@
-from agents.error_verifier_agent.prompt import INITIAL_SYSTEM_PROMPT, INITIAL_USER_PROMPT, ERROR_ERASE_PROMPT
+from agents.error_verifier_agent.prompt import ERROR_EVAL_SYSTEM_PROMPT, ERROR_EVAL_USER_PROMPT, EVAL_PROMPT
 from agents.error_verifier_agent.agent import ErrorVerifierAgent
 
 
@@ -6,12 +6,12 @@ AGENT_CONFIG = {
     'workspace': './workspace/InfiAgent',
     'agents': [
         {
-            'name': 'error_verifier_agent',
+            'name': 'error_eval_agent',
             'class': ErrorVerifierAgent,
             'prompts': {
-                'system': INITIAL_SYSTEM_PROMPT,
-                'user': INITIAL_USER_PROMPT,
-                'error': ERROR_ERASE_PROMPT
+                'system': ERROR_EVAL_SYSTEM_PROMPT,
+                'user': ERROR_EVAL_USER_PROMPT,
+                'eval': EVAL_PROMPT
             },
             'kwargs': {
                 'query': 'Your default query here'
@@ -23,17 +23,17 @@ AGENT_CONFIG = {
 #
 WORKFLOW = [
     {
-        'agent': 'error_verifier_agent',
-        'method': 'run',
+        'agent': 'error_eval_agent',
+        'method': 'eval',
         'args': {
             'model_type': 'gpt-4o',
+            'eval_folder': 'workspace/InfiAgent/error_code'
         },
-        'input': {'data': 'InfiAgent_data/hard_modified_da-dev-questions.jsonl',
-                  'code': 'code_action_data_analysis_agent_run.py'},
-        'data_ids': [7, 28, 30],  # Specify the question IDs you want to process
-        'output': 'error_verifier_result',
-        'output_type': 'analysis'  # Specify the output type here
+        'input': {'data': 'workspace/InfiAgent/error_code/hard_da-dev-wrong-code.jsonl'},
+        'data_range': [23, 743],
+        'output': 'error_eval_result',
+        'output_type': 'analysis'
     },
 ]
 
-# [7, 28, 30, 39, 70, 77, 109, 111, 118, 124, 125, 133, 144, 177, 178, 210, 220, 224, 249, 271, 273, 275, 282, 308, 310, 376, 413, 415]
+# [144, 178, 550]

@@ -1,4 +1,4 @@
-from agents.error_suggest_agent.prompt import LOGICAL_SYSTEM_PROMPT, LOGICAL_USER_PROMPT, ERROR_PROMPT
+from agents.error_suggest_agent.prompt import LOGICAL_SYSTEM_PROMPT, LOGICAL_USER_PROMPT, ERROR_ERASE_PROMPT
 from agents.error_suggest_agent.agent import ErrorSuggestAgent
 
 
@@ -11,7 +11,7 @@ AGENT_CONFIG = {
             'prompts': {
                 'system': LOGICAL_SYSTEM_PROMPT,
                 'user': LOGICAL_USER_PROMPT,
-                'error': ERROR_PROMPT
+                'error': ERROR_ERASE_PROMPT
             },
             'kwargs': {
                 'query': 'Your default query here'
@@ -24,15 +24,15 @@ AGENT_CONFIG = {
 WORKFLOW = [
     {
         'agent': 'logical_error_inject_agent',
-        'method': 'run',
+        'method': 'run_logical',
         'args': {
             'model_type': 'gpt-4o',
+            'data_folder': 'InfiAgent_data/da-dev-tables'
         },
-        'input': {'data': 'InfiAgent_data/hard_modified_da-dev-questions.jsonl',
-                  'code': 'code_action_data_analysis_agent_run.py'},
-        'data_ids': [7, 28, 30, 39, 70, 77, 109, 111, 118, 124],  # Specify the question IDs you want to process
+        'input': {'data': 'workspace/InfiAgent/correct_codes/hard_da-dev-q-code-a.jsonl'},
+        'data_range': [210, 743],  # Specify the question IDs you want to process
         'output': 'logical_error_inject_result',
-        'output_type': 'analysis'  # Specify the output type here
+        'output_type': 'code'  # Specify the output type here
     },
 ]
 

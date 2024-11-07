@@ -42,6 +42,7 @@ class DataAnalysisAgent(GenericAgent):
         all_code_blocks = all_python_code_blocks_pattern.findall(response)
         all_code_blocks_combined = '\n'.join(all_code_blocks)
         return all_code_blocks_combined
+
     def get_code2(self, response,file_name):
 
         all_python_code_blocks_pattern = re.compile(r'```\s*([\s\S]+?)\s*```', re.MULTILINE)

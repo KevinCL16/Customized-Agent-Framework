@@ -32,6 +32,60 @@ def get_code(response):
     return all_code_blocks_combined
 
 
+def _format_verification_result(result, code):
+    """格式化验证结果为标准格式"""
+    try:
+        # 尝试从结果中提取 JSON 部分
+        start_index = result.find('{')
+        end_index = result.rfind('}')
+        if start_index == -1 or end_index == -1:
+            raise ValueError("No valid JSON found in the result")
+
+        json_str = result[start_index:end_index + 1]
+        result_dict = json.loads(json_str)
+
+        # 构建标准格式的结果
+        formatted_result = {
+            "result": {
+                "has_errors": result_dict.get("is_error", "false").lower() == "true",
+                "errors": []
+            }
+        }
+
+        # 处理每个错误说明
+        for error in result_dict.get("error_explanation", []):
+            error_detail = {
+                "error_type": error.get("error_type", "Unknown"),
+                "error_message": error.get("explanation", ''),
+                "expected_outcome": error.get("expected_outcome", ''),
+                "suggestions": error.get("suggestions", '')
+            }
+            formatted_result['result']['errors'].append(error_detail)
+
+        # 如果没有错误信息但标记为有错误，添加默认信息
+        if formatted_result['result']['has_errors'] and not formatted_result['result']['errors']:
+            formatted_result['result']['errors'].append({
+                "error_type": "Unknown",
+                "error_message": "Unspecified error detected",
+                "expected_outcome": '',
+                "suggestions": "Please review and correct the code"
+            })
+
+        return formatted_result
+
+    except Exception as e:
+        # 如果解析失败，返回错误格式的结果
+        return {
+            'result': {
+                'has_errors': True,
+                'error_type': 'ParseError',
+                'error_message': f'Failed to parse verification result: {str(e)}',
+                'suggestions': 'Please check the code and verification output format',
+                'original_result': result
+            }
+        }
+
+
 class ErrorVerifierAgent(GenericAgent):
     def __init__(self, workspace, **kwargs):
         super().__init__(workspace, **kwargs)
@@ -130,7 +184,7 @@ class ErrorVerifierAgent(GenericAgent):
             result = self.generate(prompt, model_type=model_type, code=error_erase_code)
 
             # 解析验证结果并格式化
-            verification_result = self._format_verification_result(result, error_erase_code)
+            verification_result = _format_verification_result(result, error_erase_code)
             verifier_results.append(verification_result)
 
             # 记录验证结果
@@ -198,7 +252,7 @@ class ErrorVerifierAgent(GenericAgent):
         result = self.generate(prompt, model_type=model_type, code=error_erase_code)
 
         # 解析验证结果并格式化
-        verification_result = self._format_verification_result(result, error_erase_code)
+        verification_result = _format_verification_result(result, error_erase_code)
         # verifier_results.append(verification_result)
 
         # 记录验证结果
@@ -212,55 +266,83 @@ class ErrorVerifierAgent(GenericAgent):
         log_string = "\n".join(log)
         return log_string, verification_result
 
-    def _format_verification_result(self, result, code):
-        """格式化验证结果为标准格式"""
-        try:
-            # 尝试从结果中提取 JSON 部分
-            start_index = result.find('{')
-            end_index = result.rfind('}')
-            if start_index == -1 or end_index == -1:
-                raise ValueError("No valid JSON found in the result")
+    def eval(self, queries, model_type, eval_folder):
+        log = []
+        query = queries
 
-            json_str = result[start_index:end_index + 1]
-            result_dict = json.loads(json_str)
+        error_hidden_code = query['error_hidden_code']
+        ground_truth_dict = {
+            "error_type": query['error_type'],
+            "explanation": query['explanation'],
+            "expected_outcome": query['expected_outcome']
+        }
 
-            # 构建标准格式的结果
-            formatted_result = {
-                "result": {
-                    "has_errors": result_dict.get("is_error", "false").lower() == "true",
-                    "errors": []
-                }
-            }
+        # 记录日志
+        log.append(f"\n------------------------------------- Processing Query -------------------------------------")
+        log.append(f"Question ID: {query['id']}")
+        log.append(f"Question: {query['question']}")
+        log.append(f"Constraints: {query['constraints']}")
+        log.append(f"Data File: {query['file_name']}")
+        log.append(f"Expected Format: {query['format']}")
+        log.append(f"Ground Truth: {query['answers']}")
+        log.append(f"\n\nError Hidden Code:\n\n {error_hidden_code}\n")
 
-            # 处理每个错误说明
-            for error in result_dict.get("error_explanation", []):
-                error_detail = {
-                    "error_type": error.get("error_type", "Unknown"),
-                    "error_message": error.get("explanation", ''),
-                    "expected_outcome": error.get("expected_outcome", ''),
-                    "suggestions": error.get("suggestions", '')
-                }
-                formatted_result['result']['errors'].append(error_detail)
+        prompt = f"""Question ID: {query['id']}
+    Question: {query['question']}
 
-            # 如果没有错误信息但标记为有错误，添加默认信息
-            if formatted_result['result']['has_errors'] and not formatted_result['result']['errors']:
-                formatted_result['result']['errors'].append({
-                    "error_type": "Unknown",
-                    "error_message": "Unspecified error detected",
-                    "expected_outcome": '',
-                    "suggestions": "Please review and correct the code"
-                })
+    Constraints: {query['constraints']}
 
-            return formatted_result
+    Data File Name: {query['file_name']}
 
-        except Exception as e:
-            # 如果解析失败，返回错误格式的结果
-            return {
-                'result': {
-                    'has_errors': True,
-                    'error_type': 'ParseError',
-                    'error_message': f'Failed to parse verification result: {str(e)}',
-                    'suggestions': 'Please check the code and verification output format',
-                    'original_result': result
-                }
-            }
+    Format: {query['format']}
+
+    Correct answer: {query['answers']}
+                    """
+
+        log.append("\n...............Verifying code...............")
+        print(f"\n...............Verifying query {query['id']}...............")
+        result = self.generate(prompt, model_type=model_type, code=error_hidden_code)
+
+        # Locate the first curly brace to the last one for extracting the JSON object
+        start_index = result.find('{')
+        end_index = result.rfind('}')
+
+        if start_index == -1 or end_index == -1:
+            raise ValueError("No valid JSON found in the input string.")
+
+        # Extract the JSON substring and clean it if necessary
+        json_str = result[start_index:end_index + 1]
+        cleaned_json_str = clean_json_string(json_str)
+
+        # Convert the extracted JSON string to a Python dictionary
+        result_dict = json.loads(cleaned_json_str)
+
+        information = {
+            'ground_truth': ground_truth_dict,
+            'eval_dict': result_dict
+        }
+
+        messages = []
+        messages.append({"role": "system", "content": ''})
+        messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['eval'], information)})
+
+        print(f"\n...............Evaluating query {query['id']}...............")
+        eval_result = completion_with_backoff(messages, model_type)
+
+        eval_result_dict = {
+            'id': query['id'],
+            'eval_result': eval_result
+        }
+
+        result_dict['eval_result'] = eval_result
+
+        # 记录验证结果
+        log.append(f"\nVerifier Result:\n{json.dumps(result_dict, indent=2)}\n")
+
+        # 将结果写入文件
+        with open(os.path.join(eval_folder, 'eval_result_v2_prompt.jsonl'), 'a') as jsonl_file:
+            jsonl_file.write(json.dumps(eval_result_dict) + '\n')
+
+        log_string = "\n".join(log)
+        return log_string, result_dict
+

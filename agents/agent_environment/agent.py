@@ -103,6 +103,7 @@ class AgentEnvironment:
                 return f"Error executing {file_name}: {str(e)}"
 
     def log_action(self, action, agent_name, model_type, code, log, individual_workspace):
+        model_type = model_type.replace("Qwen/", "")
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_entry = f"""
 {'=' * 80}
@@ -195,7 +196,7 @@ LOG OUTPUT:
         self._prepare_instruction_args(args, input_, instruction, individual_workspace)
         
         try:
-            method_output = method(**args)
+            method_output = method(**args, individual_workspace=individual_workspace)
         except Exception as e:
             print(f"错误：{e}")
             return None

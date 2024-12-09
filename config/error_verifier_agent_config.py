@@ -26,10 +26,10 @@ WORKFLOW = [
         'agent': 'error_eval_agent',
         'method': 'eval',
         'args': {
-            'model_type': 'gpt-4o',
+            'model_type': 'gpt-4o-mini',
             'eval_folder': 'workspace/InfiAgent/error_code'
         },
-        'input': {'data': 'workspace/InfiAgent/error_code/hard_da-dev-wrong-code.jsonl'},
+        'input': {'data': 'workspace/InfiAgent/error_code/hard_method_level_wrong.jsonl'},
         'data_range': [23, 743],
         'output': 'error_eval_result',
         'output_type': 'analysis'

@@ -327,7 +327,7 @@ class ErrorVerifierAgent(GenericAgent):
         messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['eval'], information)})
 
         print(f"\n...............Evaluating query {query['id']}...............")
-        eval_result = completion_with_backoff(messages, model_type)
+        eval_result = completion_with_backoff(messages, 'gpt-4o')
 
         eval_result_dict = {
             'id': query['id'],
@@ -340,7 +340,7 @@ class ErrorVerifierAgent(GenericAgent):
         log.append(f"\nVerifier Result:\n{json.dumps(result_dict, indent=2)}\n")
 
         # 将结果写入文件
-        with open(os.path.join(eval_folder, 'eval_result_v2_prompt.jsonl'), 'a') as jsonl_file:
+        with open(os.path.join(eval_folder, f'{model_type.replace("Qwen/","")}_method_eval_result.jsonl'), 'a') as jsonl_file:
             jsonl_file.write(json.dumps(eval_result_dict) + '\n')
 
         log_string = "\n".join(log)

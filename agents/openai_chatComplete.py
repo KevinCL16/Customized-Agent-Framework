@@ -15,7 +15,8 @@ def print_chat_message(messages):
     for message in messages:
         logging.info(f"{message['role']}: {message['content']}")
 
-@retry(wait=wait_random_exponential(min=0.02, max=1), stop=(stop_after_delay(10) | stop_after_attempt(100)))
+
+# @retry(wait=wait_random_exponential(min=0.02, max=1), stop=(stop_after_delay(10) | stop_after_attempt(100)))
 def completion_with_backoff(messages, model_type):
 
     if model_type in MODEL_CONFIG.keys():
@@ -78,6 +79,7 @@ def completion_with_backoff(messages, model_type):
 
             return None
         except openai.BadRequestError as e:
+            print(e)
             return e
 
 

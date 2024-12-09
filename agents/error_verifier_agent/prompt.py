@@ -178,6 +178,8 @@ ERROR_EVAL_SYSTEM_PROMPT = '''You will be provided with an original query and a 
     "expected_outcome": "Explain how these errors will affect model performance, accuracy, or interpretability"
 }
 ```
+
+Output only ONE json dict.
 '''
 
 ERROR_EVAL_USER_PROMPT = '''You are given the following query and data analysis code.
@@ -203,6 +205,8 @@ Please provide your analysis in the following format:
     "expected_outcome": "Explain how these errors will affect model performance, accuracy, or interpretability"
 }
 ```
+
+Output only ONE json dict.
 '''
 
 EVAL_PROMPT = '''You are given the following two analysis on whether a piece of code contains errors or not.
@@ -220,4 +224,50 @@ Determine if Analysis Two points out the exact same errors as Analysis One:
 - If Analysis Two fails to identify any errors present in Analysis One, score it **0**.
 
 Your output format should be: SCORE[1/0.5/0]
+'''
+
+RUBBER_DUCK_EVAL_SYSTEM_PROMPT = '''You will be provided with an original query and a data analysis code. Your task is to:
+
+1. Read the Question carefully and identify if there are any logic errors injected into the code.  
+
+2. For each logic error:  
+   - **Locate the Error**: Specify the exact line of code where the error will cause an issue.  
+   - **Error Details**: Provide the error message or traceback that would be generated when executing the code.  
+
+### Output Format:
+```json
+{
+    "error_line": "Specify the exact line of code where the error will occur",
+    "error_message": "Provide the exact error message or traceback caused by this line"
+}
+```
+
+Output only ONE json dict for each error.
+'''
+
+RUBBER_DUCK_EVAL_USER_PROMPT = '''You are given the following query and data analysis code.
+
+### Original Query:
+{{query}}
+
+
+### Data Analysis Code:
+{{code}}
+
+
+1. Read the Question carefully and identify if there are any logic errors injected into the code.  
+
+2. For each logic error:  
+   - **Locate the Error**: Specify the exact line of code where the error will cause an issue.  
+   - **Error Details**: Provide the error message or traceback that would be generated when executing the code.  
+
+### Output Format:
+```json
+{
+    "error_line": "Specify the exact line of code where the error will occur",
+    "error_message": "Provide the exact error message or traceback caused by this line"
+}
+```
+
+Output only ONE json dict for each error.
 '''

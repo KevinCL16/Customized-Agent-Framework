@@ -1,13 +1,15 @@
 import json
 
 # Read JSONL file
-with open('eval_result_v2_prompt.jsonl', 'r') as file:
+with open('gpt-4o-mini_method_eval_result.jsonl', 'r') as file:
     records = [json.loads(line) for line in file]
 
 # Calculate score
 total_score = 0
 for record in records:
-    score_str = record["eval_result"].split("[")[-1][:-1]
+    start_index = record["eval_result"].find('[')
+    end_index = record["eval_result"].find(']')
+    score_str = record["eval_result"][start_index + 1:end_index]
     score = float(score_str)
     total_score += score
 

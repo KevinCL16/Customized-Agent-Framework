@@ -41,8 +41,8 @@ WORKFLOW = [
                     'model_type': 'claude-3-5-sonnet-20240620',
                     'file_name': 'plot.png'
                 },
-                'input': {'data': 'InfiAgent_data/hard_modified_da-dev-questions.jsonl'},
-                'data_range': [424, 759],
+                'input': {'data': 'InfiAgent_data/easy_medium_modified_da-dev-questions.jsonl'},
+                'data_range': [0, 760],
                 'output': 'data_analysis_result',
                 'output_type': 'code',
                 'debug_method': 'debug_run'

@@ -1,5 +1,9 @@
 import os
 import re
+import json
+
+from tqdm import tqdm
+
 from agents.generic_agent import GenericAgent
 from agents.openai_chatComplete import completion_with_backoff
 from agents.utils import fill_in_placeholders, get_error_message, is_run_code_success, run_code
@@ -109,6 +113,18 @@ Correct answer: {query['answers']}. Make sure your analysis results are identica
             log.append("\nGenerated code:")
             log.append(generated_code)
 
+        '''structured_output = {
+            "weak_code_analysis": code
+        }
+        queries.update(structured_output)
+
+        # Save the structured output to a file
+        output_dir = os.path.join(self.workspace, 'sklearn_pandas_errors')
+        os.makedirs(output_dir, exist_ok=True)
+
+        with open(os.path.join(output_dir, f'{model_type}_weak_direct_analysis.jsonl'), 'a') as jsonl_file:
+            jsonl_file.write(json.dumps(queries) + '\n')'''
+
         # Join the log list into a single string
         log_string = "\n".join(log)
         return log_string, ''.join(code)
@@ -178,3 +194,58 @@ Correct answer: {query['answers']}. Make sure your analysis results are identica
         log.append("\n=== Debug Run Completed ===")
 
         return '\n'.join(log), corrected_code
+
+    def weak_direct_analysis(self, queries, model_type, file_name, individual_workspace):
+        log = []
+        structured_output = {"error_versions": []}
+
+        query = queries
+
+        log.append(f"\n--- Processing Query {query['id']} ---")
+        log.append(f"Question ID: {query['id']}")
+        log.append(f"Question: {query['question']}")
+        log.append(f"Constraints: {query['constraints']}")
+        log.append(f"Data File: {query['file_name']}")
+        log.append(f"Expected Format: {query['format']}")
+        log.append(f"Ground Truth: {query['answers']}")
+
+        prompt = f"""Question ID: {query['id']}
+Question: {query['question']}
+
+Constraints: {query['constraints']}
+
+Data File Name: {query['file_name']}
+
+Format: {query['format']}
+
+Correct answer: {query['answers']}. Make sure your analysis results are identical with the annotated ground truth.
+                """
+
+        for i in tqdm(range(5)):
+            log.append("\nGenerating code...")
+            print(f"\nweak llm generating turn No.{i}")
+            result = self.generate(prompt, model_type=model_type, file_name=file_name)
+            generated_code = self.get_code(result)
+
+            log.append(f"Generated code for run No.{i}:")
+            log.append(generated_code)
+            log.append("\n" + "-" * 50)
+
+            single_output = {
+                "modified_code": generated_code
+            }
+            structured_output['error_versions'].append(single_output)
+
+        queries.update(structured_output)
+
+        # Save the structured output to a file
+        output_dir = os.path.join(self.workspace, 'sklearn_pandas_errors')
+        os.makedirs(output_dir, exist_ok=True)
+
+        with open(os.path.join(output_dir, f'{model_type}_weak_direct_analysis.jsonl'), 'a') as jsonl_file:
+            jsonl_file.write(json.dumps(queries) + '\n')
+            print("Analysis saved.")
+
+        # Join the log list into a single string
+        log_string = "\n".join(log)
+        return log_string, queries

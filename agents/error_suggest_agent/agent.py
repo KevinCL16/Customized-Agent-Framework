@@ -439,7 +439,7 @@ class ErrorSuggestAgent(GenericAgent):
             import_lines = []
             body_lines = []
             
-            for line in code_lines:
+            '''for line in code_lines:
                 if line.strip().startswith(('import ', 'from ')):
                     import_lines.append(line)
                 else:
@@ -456,6 +456,30 @@ class ErrorSuggestAgent(GenericAgent):
                 '',
                 'if __name__ == "__main__":',
                 '    main()'
+            ])'''
+
+            for line in code_lines:
+                if line.strip().startswith(('import ', 'from ')):
+                    import_lines.append(line)
+                else:
+                    body_lines.append(line)
+
+            # Add snoop import
+            import_lines.append('import snoop')
+
+            # Add @snoop decorator to all functions
+            decorated_body = []
+            for line in body_lines:
+                stripped_line = line.strip()
+                if stripped_line.startswith('def '):  # Detect function definitions
+                    decorated_body.append('@snoop')  # Add @snoop before the function
+                decorated_body.append(line)  # Append the original line
+
+            # Combine imports and body
+            monitored_code = '\n'.join([
+                *import_lines,
+                '',
+                *decorated_body,
             ])
 
             # Save the monitored code to a file
@@ -484,7 +508,7 @@ class ErrorSuggestAgent(GenericAgent):
                 log.append(f"\nError in case {i}: {error_msg}")
 
         # Save the updated queries with execution results
-        output_file = os.path.join(error_code_directory, 'monitored_errors.jsonl')
+        output_file = os.path.join(error_code_directory, f'{model_type}_monitored_errors.jsonl')
         with open(output_file, 'a') as f:
             f.write(json.dumps(queries) + '\n')
 
@@ -611,7 +635,7 @@ The expected output format is given below:
         os.makedirs(output_dir, exist_ok=True)
 
         queries.update(structured_output)
-        with open(os.path.join(output_dir, 'library_errors.jsonl'), 'a') as jsonl_file:
+        with open(os.path.join(output_dir, f'{model_type}_library_errors.jsonl'), 'a') as jsonl_file:
             jsonl_file.write(json.dumps(queries) + '\n')
 
         log_file = os.path.join(os.path.join(individual_workspace, model_type), f'processing_log_{queries["id"]}.txt')

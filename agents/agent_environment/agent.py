@@ -62,7 +62,7 @@ class AgentEnvironment:
 
     # Data Processing Methods
     def process_instruction_file(self, input_file, data_ids=None, data_range=None):
-        with open(input_file, 'r') as f:
+        with open(input_file, 'r', encoding='utf-8') as f:
             instructions = [json.loads(line) for line in f]
 
         if data_ids:

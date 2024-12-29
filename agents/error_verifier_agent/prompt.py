@@ -271,3 +271,37 @@ RUBBER_DUCK_EVAL_USER_PROMPT = '''You are given the following query and data ana
 
 Output only ONE json dict for each error.
 '''
+
+RUBBER_DUCK_EVAL_PROMPT = '''You are provided with the following analyses of errors in a piece of code:
+
+### Ground Truth:
+```json
+{{ground_truth}}
+```
+
+### LLM Output:
+```json
+{{eval_dict}}
+```
+
+Evaluate the LLM Output against the Ground Truth separately for `error_line` and `error_message` based on the following criteria:
+
+#### Evaluation Criteria:
+
+1. **Error Line Matching (`error_line_score`)**:
+   - **Score 1**: The `error_line` in the LLM Output exactly matches the `error_line` in the Ground Truth.
+   - **Score 0**: The `error_line` in the LLM Output does not match the Ground Truth.
+
+2. **Error Message Matching (`error_message_score`)**:
+   - **Score 1**: The `error_message` in the LLM Output exactly matches the `error_message` in the Ground Truth.
+   - **Score 0.5**: The `error_message` in the LLM Output is partially correct (e.g., captures the general idea but misses specific details or phrasing).
+   - **Score 0**: The `error_message` in the LLM Output does not match the Ground Truth at all.
+
+### Output Format:
+```json
+{
+    "error_line_score": 1/0,
+    "error_message_score": 1/0.5/0
+}
+```
+'''

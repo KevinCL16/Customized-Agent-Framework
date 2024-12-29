@@ -346,3 +346,96 @@ class ErrorVerifierAgent(GenericAgent):
         log_string = "\n".join(log)
         return log_string, result_dict
 
+    def rubber_duck_eval(self, queries, model_type, eval_folder, individual_workspace):
+        log = []
+        query = queries
+
+        error_versions = query['error_versions']
+        if not error_versions:
+            raise ValueError("No error versions found in the query.")
+
+        # 记录日志
+        log.append(f"\n------------------------------------- Processing Query -------------------------------------")
+        log.append(f"Question ID: {query['id']}")
+        log.append(f"Question: {query['question']}")
+        log.append(f"Constraints: {query['constraints']}")
+        log.append(f"Data File: {query['file_name']}")
+        log.append(f"Expected Format: {query['format']}")
+        log.append(f"Ground Truth: {query['answers']}")
+
+        prompt = f"""Question ID: {query['id']}
+    Question: {query['question']}
+
+    Constraints: {query['constraints']}
+
+    Data File Name: {query['file_name']}
+
+    Format: {query['format']}
+
+    Correct answer: {query['answers']}
+                    """
+
+        eval_results = []
+        print(f"\n**********Verifying ID: {query['id']}**********")
+        for idx, error_version in enumerate(error_versions):
+            log.append(f"\n--- Processing Error Version {idx + 1}/{len(error_versions)} ---")
+
+            modified_code = error_version['modified_code']
+            ground_truth = {
+                "modified_line": error_version["modified_line"],
+                "execution_output": error_version["execution_output"]
+            }
+            # Log error version details
+            log.append(f"\nModified Code:\n{modified_code}")
+            log.append(f"Ground Truth: {json.dumps(ground_truth, indent=2)}")
+
+            log.append("\n...............Verifying code with LLM...............")
+            print(f"\n...............Verifying error version {idx + 1}/{len(error_versions)}...............")
+
+            result = self.generate(prompt, model_type=model_type, code=modified_code)
+
+            # Locate the first curly brace to the last one for extracting the JSON object
+            start_index = result.find('{')
+            end_index = result.rfind('}')
+
+            if start_index == -1 or end_index == -1:
+                raise ValueError("No valid JSON found in the LLM response.")
+
+            # Extract and parse JSON
+            json_str = result[start_index:end_index + 1]
+            cleaned_json_str = clean_json_string(json_str)
+            llm_output = json.loads(cleaned_json_str)
+
+            information = {
+                'ground_truth': ground_truth,
+                'eval_dict': llm_output
+            }
+
+            messages = []
+            messages.append({"role": "system", "content": ''})
+            messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['eval'], information)})
+
+            print(f"\n...............Evaluating error version {idx + 1}/{len(error_versions)}...............")
+            eval_result = completion_with_backoff(messages, 'gpt-4o')
+
+            start_index = eval_result.find('{')
+            end_index = eval_result.rfind('}')
+            json_str = eval_result[start_index:end_index + 1]
+            eval_result = json.loads(json_str)
+            eval_results.append(eval_result)
+
+            # Log comparison result
+            log.append(f"LLM Output: {json.dumps(llm_output, indent=2)}")
+            log.append(f"Eval Result: {eval_result}")
+
+        # Save all results to a file
+        with open(os.path.join(eval_folder, f'{model_type.replace("Qwen/", "")}_rubber_duck_eval_result.jsonl'), 'a') as jsonl_file:
+            eval_result_dict = {
+                'id': query['id'],
+                'eval_result': eval_results
+            }
+            jsonl_file.write(json.dumps(eval_result_dict) + '\n')
+
+        log_string = "\n".join(log)
+        return log_string, eval_results
+

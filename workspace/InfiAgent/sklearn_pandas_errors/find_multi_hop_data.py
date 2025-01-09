@@ -143,6 +143,6 @@ def find_cause_and_effect_error_lines_for_weak_analysis(jsonl_file_path, output_
             output_file.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 # 测试函数，传入包含 JSONL 数据的文件路径
-jsonl_file_path = "filtered_llama-3.1-8b-instant_monitored_errors.jsonl"  # 替换为您的 JSONL 文件路径
-jsonl_output_path = "test.jsonl"
-find_cause_and_effect_error_lines_for_weak_analysis(jsonl_file_path, jsonl_output_path)
+jsonl_file_path = r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\DSEval\sklearn_pandas_errors\filtered_claude-3-5-sonnet-20240620_dseval_monitored_errors.jsonl.jsonl"  # 替换为您的 JSONL 文件路径
+jsonl_output_path = "final_claude-3-5-sonnet_injection_dseval_annotation.jsonl"
+compare_error_and_modified_line(jsonl_file_path, jsonl_output_path)

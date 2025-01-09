@@ -2,7 +2,7 @@ import io
 import sys
 import os
 from agents.agent_environment import AgentEnvironment
-from config.data_annotate_agent_config import AGENT_CONFIG, WORKFLOW
+from config.library_error_multi_step_config import AGENT_CONFIG, WORKFLOW
 import importlib
 
 
@@ -28,7 +28,7 @@ def mainworkflow(config, workflow, update_callback=None):
 def get_agent_class(agent_name):
     module_name = f"agents.{agent_name.lower()}"
     class_name = ''.join(word.capitalize() for word in agent_name.split('_'))
-    
+
     try:
         module = importlib.import_module(module_name)
         return getattr(module, class_name)

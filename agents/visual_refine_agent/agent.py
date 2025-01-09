@@ -42,7 +42,7 @@ class VisualRefineAgent(GenericAgent):
         self.query = kwargs.get('query', '')
 
     def run(self, model_type, query_type, file_name):
-        plot = os.path.join(self.workspace, self.plot_file)
+        plot = os.path.join(self.workspace['workspace'], self.plot_file)
 
         print(f"Plot directory: {plot}\n")
         # pdb.set_trace()

@@ -1,7 +1,7 @@
 import json
 
 # Read JSONL file
-with open('gpt-4o_rubber_duck_eval_result.jsonl', 'r') as file:
+with open('gpt-4o_rubber_duck_eval_on_weak_llm_result.jsonl', 'r') as file:
     records = [json.loads(line) for line in file]
 
 # Initialize total scores and max scores

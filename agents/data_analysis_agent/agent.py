@@ -68,7 +68,7 @@ class DataAnalysisAgent(GenericAgent):
                     return '\n'.join(code_lines)
         return all_code_blocks_combined
 
-    def run(self, queries, model_type, file_name):
+    def run(self, queries, model_type, file_name, individual_workspace):
         log = []
         code = []
         

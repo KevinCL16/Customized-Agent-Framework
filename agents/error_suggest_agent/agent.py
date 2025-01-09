@@ -423,10 +423,10 @@ class ErrorSuggestAgent(GenericAgent):
         os.makedirs(individual_error_code_directory, exist_ok=True)
 
         # Extract file name and source path
-        file_name = queries['file_name']
+        '''file_name = queries['file_name']
         src = os.path.join(individual_workspace, file_name)
         dst = os.path.join(individual_error_code_directory, file_name)
-        shutil.copy(src, dst)
+        shutil.copy(src, dst)'''
 
         # Process each error version in the error_versions list
         for i, error_case in enumerate(queries.get('error_versions', [])):
@@ -439,7 +439,7 @@ class ErrorSuggestAgent(GenericAgent):
             import_lines = []
             body_lines = []
             
-            '''for line in code_lines:
+            for line in code_lines:
                 if line.strip().startswith(('import ', 'from ')):
                     import_lines.append(line)
                 else:
@@ -456,9 +456,9 @@ class ErrorSuggestAgent(GenericAgent):
                 '',
                 'if __name__ == "__main__":',
                 '    main()'
-            ])'''
+            ])
 
-            for line in code_lines:
+            '''for line in code_lines:
                 if line.strip().startswith(('import ', 'from ')):
                     import_lines.append(line)
                 else:
@@ -480,7 +480,7 @@ class ErrorSuggestAgent(GenericAgent):
                 *import_lines,
                 '',
                 *decorated_body,
-            ])
+            ])'''
 
             # Save the monitored code to a file
             error_file = f'error_{i}_monitored.py'
@@ -508,7 +508,7 @@ class ErrorSuggestAgent(GenericAgent):
                 log.append(f"\nError in case {i}: {error_msg}")
 
         # Save the updated queries with execution results
-        output_file = os.path.join(error_code_directory, f'{model_type}_monitored_errors.jsonl')
+        output_file = os.path.join(error_code_directory, f'{model_type}_matplotbench_monitored_errors.jsonl')
         with open(output_file, 'a') as f:
             f.write(json.dumps(queries) + '\n')
 
@@ -518,7 +518,7 @@ class ErrorSuggestAgent(GenericAgent):
     def process_sklearn_pandas_code(self, queries, model_type, data_folder, individual_workspace):
         log = []
         # Step 1: Identify sklearn and pandas code
-        identify_prompt = f"""### Original Query:
+        """identify_sk_pd_prompt = f### Original Query:
 {queries['question']}
 
 ### Correct Data Analysis Code:
@@ -528,7 +528,7 @@ class ErrorSuggestAgent(GenericAgent):
 {extract_csv_info_as_string(os.path.join(data_folder, queries['file_name']))}
 
 ### Task:
-Identify and extract all lines of code that use sklearn or pandas libraries for actual data processing or analysis.
+Identify and extract all lines of code that use sklearn, pandas libraries for actual data processing or analysis.
 Rules:
 1. Skip import statements
 2. Only include lines that actively use pandas/sklearn functionality (e.g., data loading, model training, predictions)
@@ -542,18 +542,90 @@ Rules:
 ### Expected Output:
 The expected output format is given below:
 ```json
-{{
+{
     "original_sklearn_pandas_code": [
-        {{
+        {
             "line": "Complete line of code using sklearn/pandas",
             "purpose": "Brief description of what this line does",
             "library": "sklearn or pandas"
+        },
+        ...
+    ]
+}
+```
+"""
+
+        identify_prompt = f"""### Original Query:
+        {queries['question']}
+
+### Correct Data Analysis Code:
+{queries['correct_analysis_code']}
+
+
+
+### Task:  
+Identify and extract all lines of code that use **numpy**, **scipy**, and **matplotlib** libraries for actual data processing, analysis, or visualization.  
+
+### Rules:  
+1. Skip import statements.  
+2. Only include lines that actively use **numpy**, **scipy**, or **matplotlib** functionality (e.g., array manipulations, statistical operations, plotting).  
+3. Include the **complete line of code**, not just the method calls.  
+4. Focus on core functionality like:  
+   - **Numpy**: Array creation, manipulation, and mathematical computations (e.g., `np.array`, `np.mean`, `np.dot`).  
+   - **Scipy**: Statistical or mathematical operations, optimization, and integration (e.g., `scipy.stats`, `scipy.optimize`).  
+   - **Matplotlib**: Data visualization (e.g., `plt.plot`, `plt.scatter`, `plt.imshow`).  
+
+### Expected Output:  
+The expected output format is given below:  
+```json
+{{
+    "original_package_code": [
+        {{
+            "line": "Complete line of code using numpy/scipy/matplotlib",
+            "purpose": "Brief description of what this line does",
+            "library": "numpy, scipy, or matplotlib"
         }},
         ...
     ]
 }}
 ```
 """
+
+        identify_dseval_prompt = f"""### Original Query:
+        {queries['question']}
+
+### Correct Data Analysis Code:
+{queries['correct_analysis_code']}
+
+
+### Task:
+Identify and extract all lines of code that use numpy, scipy, and sklearn libraries for actual data processing or analysis.  
+Rules:  
+1. Skip import statements.  
+2. Only include lines that actively use numpy, scipy, or sklearn functionality (e.g., array manipulations, statistical operations, model training, predictions).  
+3. Include the complete line of code, not just the method calls.  
+4. Focus on core functionality like:  
+   - Array creation and manipulation (e.g., `np.array`, `np.mean`, `np.dot`).  
+   - Statistical or mathematical computations (e.g., `scipy.stats`, `scipy.optimize`).  
+   - Model creation and training (e.g., `model.fit`, `model.predict`).  
+   - Data transformations (e.g., `train_test_split`, feature scaling, imputation).  
+
+### Expected Output:
+The expected output format is given below:
+```json
+{{
+    "original_package_code": [
+        {{
+            "line": "Complete line of code using numpy/scipy/sklearn",
+            "purpose": "Brief description of what this line does",
+            "library": "numpy, scipy, or sklearn"
+        }},
+        ...
+    ]
+}}
+```
+"""
+
         # Call LLM to identify sklearn and pandas code
         print(f"**********Running example {queries['id']}**********")
         result = self.raw_generate(identify_prompt, model_type=model_type)
@@ -564,7 +636,7 @@ The expected output format is given below:
         
         json_str = result[start_index:end_index + 1]
         result_dict = json.loads(json_str)
-        original_code_lines = result_dict.get('original_sklearn_pandas_code', [])
+        original_code_lines = result_dict.get('original_package_code', [])
 
         # Step 2: Inject errors for each identified line
         errors = []
@@ -626,7 +698,7 @@ The expected output format is given below:
         # Step 3: Structure the output
         structured_output = {
             "original_code": original_code,
-            "sklearn_pandas_usage": original_code_lines,
+            "package_usage": original_code_lines,
             "error_versions": errors
         }
 
@@ -635,11 +707,12 @@ The expected output format is given below:
         os.makedirs(output_dir, exist_ok=True)
 
         queries.update(structured_output)
-        with open(os.path.join(output_dir, f'{model_type}_library_errors.jsonl'), 'a') as jsonl_file:
+        with open(os.path.join(output_dir, f'{model_type}_matplotbench_library_errors.jsonl'), 'a', encoding='utf-8') as jsonl_file:
             jsonl_file.write(json.dumps(queries) + '\n')
 
         log_file = os.path.join(os.path.join(individual_workspace, model_type), f'processing_log_{queries["id"]}.txt')
-        with open(log_file, 'w') as f:
+        os.makedirs(os.path.join(individual_workspace, model_type), exist_ok=True)
+        with open(log_file, 'w', encoding='utf-8') as f:
             f.write('\n'.join(log))
 
         return structured_output, '\n'.join(log)

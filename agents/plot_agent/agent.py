@@ -5,6 +5,7 @@ from agents.openai_chatComplete import completion_with_backoff
 from agents.utils import fill_in_placeholders, get_error_message, is_run_code_success, run_code
 from agents.utils import print_filesys_struture
 from agents.utils import change_directory
+from agents.plot_agent.prompt import INITIAL_SYSTEM_PROMPT, INITIAL_USER_PROMPT, VIS_SYSTEM_PROMPT, VIS_USER_PROMPT, ERROR_PROMPT
 
 
 class PlotAgent(GenericAgent):
@@ -18,7 +19,7 @@ class PlotAgent(GenericAgent):
 
     def generate(self, user_prompt, model_type, query_type, file_name):
 
-        workspace_structure = print_filesys_struture(self.workspace)
+        workspace_structure = print_filesys_struture(self.workspace["workspace"])
         
         information = {
             'workspace_structure': workspace_structure,
@@ -28,13 +29,13 @@ class PlotAgent(GenericAgent):
 
         if query_type == 'initial':
             messages = []
-            messages.append({"role": "system", "content": fill_in_placeholders(self.prompts['initial']['system'], information)})
-            messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['initial']['user'], information)})
+            messages.append({"role": "system", "content": fill_in_placeholders(INITIAL_SYSTEM_PROMPT, information)})
+            messages.append({"role": "user", "content": fill_in_placeholders(INITIAL_USER_PROMPT, information)})
             # print(messages)
         else:
             messages = []
-            messages.append({"role": "system", "content": fill_in_placeholders(self.prompts['vis_refined']['system'], information)})
-            messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['vis_refined']['user'], information)})
+            messages.append({"role": "system", "content": fill_in_placeholders(VIS_SYSTEM_PROMPT, information)})
+            messages.append({"role": "user", "content": fill_in_placeholders(VIS_USER_PROMPT, information)})
             # print(messages)
 
         self.chat_history = self.chat_history + messages
@@ -91,13 +92,13 @@ class PlotAgent(GenericAgent):
 
 
             file_name = f'code_action_{model_type}_{query_type}_{try_count}.py'
-            with open(os.path.join(self.workspace, file_name), 'w') as f:
+            with open(os.path.join(self.workspace['workspace'], file_name), 'w', encoding='utf-8') as f:
                 f.write(code)
             error = None
-            log = run_code(self.workspace, file_name)
+            log = run_code(self.workspace['workspace'], file_name)
 
             if is_run_code_success(log):
-                if print_filesys_struture(self.workspace).find('.png') == -1:
+                if print_filesys_struture(self.workspace['workspace']).find('.png') == -1:
                     log = log + '\n' + 'No plot generated.'
                     
                     self.chat_history.append({"role": "user", "content": fill_in_placeholders(self.prompts['error'],
@@ -113,7 +114,7 @@ class PlotAgent(GenericAgent):
             else:
                 error = get_error_message(log) if error is None else error
                 # TODO error prompt
-                self.chat_history.append({"role": "user", "content": fill_in_placeholders(self.prompts['error'],
+                self.chat_history.append({"role": "user", "content": fill_in_placeholders(ERROR_PROMPT,
                                                                                           {'error_message': error,
                                                                                            'data_information': self.data_information})})
                 try_count += 1

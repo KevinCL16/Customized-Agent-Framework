@@ -22,7 +22,7 @@ class CodeOutputHandler(OutputHandler):
     def handle(self, method_output, agent_name, method_name, individual_workspace, args):
         log, code = method_output
         file_name = f'code_{agent_name}_{method_name}.py'
-        with open(os.path.join(individual_workspace, file_name), 'w') as f:
+        with open(os.path.join(individual_workspace, file_name), 'w', encoding='utf-8') as f:
             f.write(code)
         return log, code, file_name
 
@@ -77,7 +77,7 @@ class AgentEnvironment:
         workspace_list = []
         for instruction in self.instructions:
             d_id = instruction['id']
-            individual_directory = os.path.join(self.workspace, f'example {d_id}')
+            individual_directory = os.path.join(self.workspace, f'example_{d_id}')
             os.makedirs(individual_directory, exist_ok=True)
             workspace_list.append(individual_directory)
 
@@ -372,7 +372,7 @@ LOG OUTPUT:
             try:
                 results = {}
                 # Create individual workspace for this instruction
-                individual_workspace = os.path.join(self.workspace, f'example {instruction["id"]}')
+                individual_workspace = os.path.join(self.workspace, f'example_{instruction["id"]}')
                 os.makedirs(individual_workspace, exist_ok=True)
                 
                 # Copy data file if needed
@@ -445,7 +445,7 @@ LOG OUTPUT:
 
             # TODO: NOT APPLICABLE TO ALL AGENT WORKFLOWS
             if not loop_condition:
-                self._save_correct_code("hard_da-dev-q-code-a.jsonl")
+                self._save_correct_code("easy_medium_da-dev-q-code-a.jsonl")
             # TODO: NOT APPLICABLE TO ALL AGENT WORKFLOWS
 
             print(f"Iteration {iteration + 1}: {'Errors found' if loop_condition else 'No errors found'}")

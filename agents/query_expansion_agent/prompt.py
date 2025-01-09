@@ -1,4 +1,3 @@
-
 SYSTEM_PROMPT = '''According to the user query, expand and solidify the query into a step by step detailed instruction (or comment) on how to write python code to fulfill the user query's requirements. Import the appropriate libraries. Pinpoint the correct library functions to call and set each parameter in every function call accordingly.'''
 
 EXPERT_USER_PROMPT = '''Here is the user query: [User Query]:

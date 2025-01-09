@@ -28,8 +28,8 @@ def filter_error_versions(input_file, output_file):
 
 
 # 输入和输出文件路径
-input_file = 'llama-3.1-8b-instant_monitored_errors.jsonl'  # 原始 JSONL 文件
-output_file = 'filtered_llama-3.1-8b-instant_monitored_errors.jsonl'  # 筛选后的 JSONL 文件
+input_file = r'D:\ComputerScience\CODES\MatPlotAgent-main\workspace\sklearn_pandas_errors\claude-3-5-sonnet-20240620_matplotbench_monitored_errors.jsonl'  # 原始 JSONL 文件
+output_file = 'filtered_claude-3-5-sonnet_matplotbench_monitored_errors.jsonl'  # 筛选后的 JSONL 文件
 
 # 执行筛选
 filter_error_versions(input_file, output_file)

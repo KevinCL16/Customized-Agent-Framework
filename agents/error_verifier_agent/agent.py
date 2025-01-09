@@ -198,7 +198,7 @@ class ErrorVerifierAgent(GenericAgent):
         log_string = "\n".join(log)
         return log_string, verifier_results
 
-    def run_with_other_agent(self, queries, model_type, from_prev_agent):
+    def run_with_other_agent(self, queries, model_type, from_prev_agent, individual_workspace):
         log = []
         # verifier_results = []
         query = queries
@@ -380,9 +380,9 @@ class ErrorVerifierAgent(GenericAgent):
         for idx, error_version in enumerate(error_versions):
             log.append(f"\n--- Processing Error Version {idx + 1}/{len(error_versions)} ---")
 
-            modified_code = error_version['modified_code']
+            modified_code = error_version['cause_error_line']
             ground_truth = {
-                "modified_line": error_version["modified_line"],
+                "modified_line": error_version["cause_error_line"],
                 "execution_output": error_version["execution_output"]
             }
             # Log error version details
@@ -429,7 +429,7 @@ class ErrorVerifierAgent(GenericAgent):
             log.append(f"Eval Result: {eval_result}")
 
         # Save all results to a file
-        with open(os.path.join(eval_folder, f'{model_type.replace("Qwen/", "")}_rubber_duck_eval_result.jsonl'), 'a') as jsonl_file:
+        with open(os.path.join(eval_folder, f'{model_type.replace("Qwen/", "")}_rubber_duck_eval_on_weak_llm_result.jsonl'), 'a') as jsonl_file:
             eval_result_dict = {
                 'id': query['id'],
                 'eval_result': eval_results

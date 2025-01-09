@@ -29,8 +29,8 @@ WORKFLOW = [
             'model_type': 'gpt-4o',
             'eval_folder': 'workspace/InfiAgent/sklearn_pandas_errors'
         },
-        'input': {'data': 'workspace/InfiAgent/sklearn_pandas_errors/filtered_monitored_errors.jsonl'},
-        'data_range': [224, 743],
+        'input': {'data': 'workspace/InfiAgent/sklearn_pandas_errors/final_llama-3.1-8b_direct_generate_dabench_hard_annotation.jsonl'},
+        'data_range': [23, 743],
         'output': 'rubber_duck_eval_result',
         'output_type': 'analysis'
     },

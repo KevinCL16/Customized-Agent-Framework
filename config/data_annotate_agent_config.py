@@ -42,7 +42,7 @@ WORKFLOW = [
                     'file_name': 'plot.png'
                 },
                 'input': {'data': 'InfiAgent_data/easy_medium_modified_da-dev-questions.jsonl'},
-                'data_range': [0, 760],
+                'data_range': [27, 760],
                 'output': 'data_analysis_result',
                 'output_type': 'code',
                 'debug_method': 'debug_run'

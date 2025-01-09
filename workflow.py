@@ -20,75 +20,73 @@ args = parser.parse_args()
 
 
 def mainworkflow(expert_instruction, simple_instruction, workspace, update_callback=None, max_try=3, model='gpt-4o'):
-    output_buffer = io.StringIO()
-    original_stdout = sys.stdout
-    sys.stdout = output_buffer
+    # output_buffer = io.StringIO()
+    # original_stdout = sys.stdout
+    # sys.stdout = output_buffer
 
-    def flush_output():
+    '''def flush_output():
         output = output_buffer.getvalue()
         if output and update_callback:
             update_callback(terminal_output=output)
         output_buffer.truncate(0)
-        output_buffer.seek(0)
+        output_buffer.seek(0)'''
 
-    try:
-        print('=========Query Expansion AGENT=========')
-        config = {'workspace': workspace}
-        print(f"config: {config}")
-        print(f"Using model: {model}")
-        flush_output()
 
-        query_expansion_agent = QueryExpansionAgent(expert_instruction, simple_instruction, model_type=model)
-        expanded_simple_instruction = query_expansion_agent.run('simple')
-        print('=========Expanded Simple Instruction=========')
-        flush_output()
+    print('=========Query Expansion AGENT=========')
+    config = {'workspace': workspace}
+    print(f"config: {config}")
+    print(f"Using model: {model}")
+
+
+    query_expansion_agent = QueryExpansionAgent(simple_instruction, model_type=model)
+    expanded_simple_instruction = query_expansion_agent.run(simple_instruction)
+    print('=========Expanded Simple Instruction=========')
+
+
+    if update_callback:
+        update_callback(expanded_instruction=expanded_simple_instruction)
+
+    print('=========Plotting=========')
+    action_agent = PlotAgent(config, query=expanded_simple_instruction)
+    print(f'========={model} Plotting=========')
+
+    novice_log, novice_code = action_agent.run_initial(model, 'novice.png')
+    logging.info(novice_log)
+    print('=========Using Original Code for Visual Feedback=========')
+
+
+    if update_callback:
+        update_callback(code=novice_code)
+
+    visual_feedback = ""
+    if args.visual_refine and os.path.exists(f'{workspace}/novice.png'):
+        if update_callback:
+            update_callback(figure=os.path.join(workspace, 'novice.png'))
+        print('Use original code for visual feedback')
+
+        visual_refine_agent = VisualRefineAgent(plot_file='novice.png', workspace=config, query=simple_instruction)
+        visual_feedback = visual_refine_agent.run(model, 'novice', 'novice_final.png')
 
         if update_callback:
-            update_callback(expanded_instruction=expanded_simple_instruction)
+            update_callback(visual_feedback=visual_feedback)
 
-        print('=========Plotting=========')
-        action_agent = PlotAgent(config, expanded_simple_instruction)
-        print(f'========={model} Plotting=========')
-        flush_output()
-        novice_log, novice_code = action_agent.run_initial(model, 'novice.png')
+        print('=========Plotting with Visual Feedback=========')
+
+        final_instruction = '' + '\n\n' + visual_feedback
+        action_agent = PlotAgent(config, query=final_instruction)
+        novice_log, novice_code = action_agent.run_vis(model, 'novice_final.png')
         logging.info(novice_log)
-        print('=========Using Original Code for Visual Feedback=========')
-        flush_output()
 
         if update_callback:
-            update_callback(code=novice_code)
+            update_callback(figure=os.path.join(workspace, 'novice_final.png'))
 
-        visual_feedback = ""
-        if args.visual_refine and os.path.exists(f'{workspace}/novice.png'):
-            if update_callback:
-                update_callback(figure=os.path.join(workspace, 'novice.png'))
-            print('Use original code for visual feedback')
-            flush_output()
-            visual_refine_agent = VisualRefineAgent('novice.png', config, '', simple_instruction)
-            visual_feedback = visual_refine_agent.run(model, 'novice', 'novice_final.png')
+    result = {
+        'code': novice_code,
+        'visual_feedback': visual_feedback if args.visual_refine and os.path.exists(
+            f'{workspace}/novice.png') else '',
+        'figure_path': os.path.join(workspace, 'novice_final.png' if args.visual_refine else 'novice.png')
+    }
 
-            if update_callback:
-                update_callback(visual_feedback=visual_feedback)
-
-            print('=========Plotting with Visual Feedback=========')
-            flush_output()
-            final_instruction = '' + '\n\n' + visual_feedback
-            action_agent = PlotAgent(config, final_instruction)
-            novice_log, novice_code = action_agent.run_vis(model, 'novice_final.png')
-            logging.info(novice_log)
-
-            if update_callback:
-                update_callback(figure=os.path.join(workspace, 'novice_final.png'))
-
-        result = {
-            'code': novice_code,
-            'visual_feedback': visual_feedback if args.visual_refine and os.path.exists(
-                f'{workspace}/novice.png') else '',
-            'figure_path': os.path.join(workspace, 'novice_final.png' if args.visual_refine else 'novice.png')
-        }
-
-    finally:
-        sys.stdout = original_stdout
 
     return result
 
@@ -104,8 +102,9 @@ def check_refined_code_executable(refined_code, model_type, query_type, workspac
 
 if __name__ == "__main__":
     workspace_base = args.workspace
-    data_path = '/home/zhoupeng/project/LLM/agent/plotagent/benchmark/newPlotAgent/plot-agent/benchmark_data/'
+    data_path = 'D:/ComputerScience/CODES/MatPlotAgent-main/benchmark_data'
     data = json.load(open(f'{data_path}/benchmark_instructions.json'))
+    data = data[27:75]
 
     for item in tqdm(data):
         novice_instruction = item['simple_instruction']
@@ -121,7 +120,6 @@ if __name__ == "__main__":
                 os.system(f'cp -r {input_path}/* {directory_path}')
         else:
             print(f"Directory '{directory_path}' already exists.")
-            continue
 
         logging.basicConfig(level=logging.INFO, filename=f'{directory_path}/workflow.log', filemode='w',
                             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')

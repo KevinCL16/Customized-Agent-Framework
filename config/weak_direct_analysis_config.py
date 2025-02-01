@@ -4,7 +4,7 @@ from agents.error_suggest_agent.agent import ErrorSuggestAgent
 from agents.error_suggest_agent.prompt import LIBRARY_SYSTEM_PROMPT, LIBRARY_USER_PROMPT, ERROR_ERASE_PROMPT
 
 AGENT_CONFIG = {
-    'workspace': './workspace/InfiAgent',
+    'workspace': './workspace/DSEval',
     'agents': [
         {
             'name': 'weak_direct_analysis_agent',
@@ -42,8 +42,8 @@ WORKFLOW = [
             'model_type': 'llama-3.1-8b-instant',
             'file_name': 'plot.png'
         },
-        'input': {'data': 'InfiAgent_data/hard_modified_da-dev-questions.jsonl'},
-        'data_range': [177, 743],  # Specify the question IDs you want to process
+        'input': {'data': 'workspace/InfiAgent/correct_codes/dseval-q-code.jsonl'},
+        'data_range': [0, 30],  # Specify the question IDs you want to process
         'output': 'weak_direct_analysis_result',
         'output_type': 'analysis'  # Specify the output type here
     },
@@ -54,10 +54,10 @@ WORKFLOW = [
             'model_type': 'llama-3.1-8b-instant',
             'data_folder': 'InfiAgent_data/da-dev-tables'
         },
-        'input': {'data': 'workspace/InfiAgent/sklearn_pandas_errors/llama-3.1-8b-instant_weak_direct_analysis.jsonl'},
+        'input': {'data': 'workspace/DSEval/sklearn_pandas_errors/llama-3.1-8b-instant_dseval_weak_direct_analysis.jsonl'},
         # workspace/InfiAgent/correct_codes/hard_da-dev-q-code-a.jsonl
-        # workspace/InfiAgent/sklearn_pandas_errors/library_errors.jsonl
-        'data_range': [177, 743],  # Specify the question IDs you want to process
+        # workspace/InfiAgent/sklearn_pandas_errors/gpt-4o_dabench_hard_library_errors.jsonl
+        'data_range': [0, 30],  # Specify the question IDs you want to process
         'output': 'library_error_snoop_result',
         'output_type': 'analysis'  # Specify the output type here
     },

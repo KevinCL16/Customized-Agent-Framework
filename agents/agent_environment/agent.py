@@ -1,4 +1,5 @@
 import pandas as pd
+from tqdm import tqdm
 import json
 import os
 import shutil
@@ -368,7 +369,7 @@ LOG OUTPUT:
         workflow_aux = copy.deepcopy(workflow)
         
         # Now process each instruction
-        for instruction in self.instructions:
+        for instruction in tqdm(self.instructions):
             try:
                 results = {}
                 # Create individual workspace for this instruction

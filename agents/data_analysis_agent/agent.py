@@ -204,22 +204,30 @@ Correct answer: {query['answers']}. Make sure your analysis results are identica
         log.append(f"\n--- Processing Query {query['id']} ---")
         log.append(f"Question ID: {query['id']}")
         log.append(f"Question: {query['question']}")
-        log.append(f"Constraints: {query['constraints']}")
-        log.append(f"Data File: {query['file_name']}")
-        log.append(f"Expected Format: {query['format']}")
-        log.append(f"Ground Truth: {query['answers']}")
+        # log.append(f"Constraints: {query['constraints']}")
+        # log.append(f"Data File: {query['file_name']}")
+        # log.append(f"Expected Format: {query['format']}")
+        # log.append(f"Ground Truth: {query['answers']}")
 
-        prompt = f"""Question ID: {query['id']}
-Question: {query['question']}
+        # prompt_dabench = f"""Question ID: {query['id']}
+# Question: {query['question']}
 
-Constraints: {query['constraints']}
+# Constraints: {query['constraints']}
 
-Data File Name: {query['file_name']}
+# Data File Name: {query['file_name']}
 
-Format: {query['format']}
+# Format: {query['format']}
 
-Correct answer: {query['answers']}. Make sure your analysis results are identical with the annotated ground truth.
-                """
+# Correct answer: {query['answers']}. Make sure your analysis results are identical with the annotated ground truth.
+#                 """
+
+        prompt = f"""Here is the query:
+
+{query['question']}
+
+
+If the query requires data manipulation from a csv file, process the data from the csv file and complete the query in one piece of code.
+"""
 
         for i in tqdm(range(5)):
             log.append("\nGenerating code...")
@@ -242,7 +250,7 @@ Correct answer: {query['answers']}. Make sure your analysis results are identica
         output_dir = os.path.join(self.workspace, 'sklearn_pandas_errors')
         os.makedirs(output_dir, exist_ok=True)
 
-        with open(os.path.join(output_dir, f'{model_type}_weak_direct_analysis.jsonl'), 'a') as jsonl_file:
+        with open(os.path.join(output_dir, f'{model_type}_dseval_weak_direct_analysis.jsonl'), 'a') as jsonl_file:
             jsonl_file.write(json.dumps(queries) + '\n')
             print("Analysis saved.")
 

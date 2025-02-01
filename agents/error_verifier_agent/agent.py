@@ -10,6 +10,18 @@ from agents.utils import print_filesys_struture
 from agents.utils import change_directory
 
 
+def extract_traceback(error_str):
+    """
+    从错误信息字符串中提取 'Traceback (most recent call last):' 及其之后的报错信息。
+    """
+    pattern = r"Traceback \(most recent call last\):.*"
+    match = re.search(pattern, error_str, re.DOTALL)
+    if match:
+        return match.group(0).split('\n')[-2]
+    else:
+        return None
+
+
 def clean_json_string(json_str):
     # Locate the injected_code value
     start_index = json_str.find('"error_code": "') + len('"error_code": "')
@@ -358,84 +370,229 @@ class ErrorVerifierAgent(GenericAgent):
         log.append(f"\n------------------------------------- Processing Query -------------------------------------")
         log.append(f"Question ID: {query['id']}")
         log.append(f"Question: {query['question']}")
-        log.append(f"Constraints: {query['constraints']}")
-        log.append(f"Data File: {query['file_name']}")
-        log.append(f"Expected Format: {query['format']}")
-        log.append(f"Ground Truth: {query['answers']}")
+        # log.append(f"Constraints: {query['constraints']}")
+        # log.append(f"Data File: {query['file_name']}")
+        # log.append(f"Expected Format: {query['format']}")
+         #log.append(f"Ground Truth: {query['answers']}")
 
         prompt = f"""Question ID: {query['id']}
     Question: {query['question']}
-
-    Constraints: {query['constraints']}
-
-    Data File Name: {query['file_name']}
-
-    Format: {query['format']}
-
-    Correct answer: {query['answers']}
                     """
 
+        MAX_RETRIES = 5
         eval_results = []
         print(f"\n**********Verifying ID: {query['id']}**********")
-        for idx, error_version in enumerate(error_versions):
-            log.append(f"\n--- Processing Error Version {idx + 1}/{len(error_versions)} ---")
+        try:
+            for idx, error_version in enumerate(error_versions):
+                retries = 0  # 重试计数器
+                success = False  # 标记是否成功处理
 
-            modified_code = error_version['cause_error_line']
-            ground_truth = {
-                "modified_line": error_version["cause_error_line"],
-                "execution_output": error_version["execution_output"]
-            }
-            # Log error version details
-            log.append(f"\nModified Code:\n{modified_code}")
-            log.append(f"Ground Truth: {json.dumps(ground_truth, indent=2)}")
+                while retries < MAX_RETRIES and not success:
+                    try:
+                        log.append(
+                            f"\n--- Processing Error Version {idx + 1}/{len(error_versions)} (Attempt {retries + 1}) ---")
 
-            log.append("\n...............Verifying code with LLM...............")
-            print(f"\n...............Verifying error version {idx + 1}/{len(error_versions)}...............")
+                        modified_code = error_version['modified_code']
+                        error_message = extract_traceback(error_version['execution_output'])
+                        if error_message is not None:
+                            ground_truth = {
+                                "cause_error_line": error_version["cause_error_line"],
+                                "effect_error_line": error_version["effect_error_line"],
+                                "execution_output": error_message
+                            }
+                            # Log error version details
+                            log.append(f"\nModified Code:\n{modified_code}")
+                            log.append(f"Ground Truth: {json.dumps(ground_truth, indent=2)}")
 
-            result = self.generate(prompt, model_type=model_type, code=modified_code)
+                            log.append("\n...............Verifying code with LLM...............")
+                            print(
+                                f"\n...............Verifying error version {idx + 1}/{len(error_versions)} (Attempt {retries + 1})...............")
 
-            # Locate the first curly brace to the last one for extracting the JSON object
-            start_index = result.find('{')
-            end_index = result.rfind('}')
+                            result = self.generate(prompt, model_type=model_type, code=modified_code)
 
-            if start_index == -1 or end_index == -1:
-                raise ValueError("No valid JSON found in the LLM response.")
+                            # Locate the first curly brace to the last one for extracting the JSON object
+                            start_index = result.rfind('{')
+                            end_index = result.rfind('}')
 
-            # Extract and parse JSON
-            json_str = result[start_index:end_index + 1]
-            cleaned_json_str = clean_json_string(json_str)
-            llm_output = json.loads(cleaned_json_str)
+                            if start_index == -1 or end_index == -1:
+                                raise ValueError("No valid JSON found in the LLM response.")
 
-            information = {
-                'ground_truth': ground_truth,
-                'eval_dict': llm_output
-            }
+                            # Extract and parse JSON
+                            json_str = result[start_index:end_index + 1]
+                            cleaned_json_str = clean_json_string(json_str)
+                            llm_output = json.loads(cleaned_json_str)
 
-            messages = []
-            messages.append({"role": "system", "content": ''})
-            messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['eval'], information)})
+                            information = {
+                                'ground_truth': ground_truth,
+                                'eval_dict': llm_output
+                            }
 
-            print(f"\n...............Evaluating error version {idx + 1}/{len(error_versions)}...............")
-            eval_result = completion_with_backoff(messages, 'gpt-4o')
+                            messages = []
+                            messages.append({"role": "system", "content": ''})
+                            messages.append(
+                                {"role": "user", "content": fill_in_placeholders(self.prompts['eval'], information)})
 
-            start_index = eval_result.find('{')
-            end_index = eval_result.rfind('}')
-            json_str = eval_result[start_index:end_index + 1]
-            eval_result = json.loads(json_str)
-            eval_results.append(eval_result)
+                            print(
+                                f"\n...............Evaluating error version {idx + 1}/{len(error_versions)} (Attempt {retries + 1})...............")
+                            eval_result = completion_with_backoff(messages, 'gpt-4o')
 
-            # Log comparison result
-            log.append(f"LLM Output: {json.dumps(llm_output, indent=2)}")
-            log.append(f"Eval Result: {eval_result}")
+                            start_index = eval_result.rfind('{')
+                            end_index = eval_result.rfind('}')
+                            json_str = eval_result[start_index:end_index + 1]
+                            eval_result = json.loads(json_str)
+                            eval_results.append(eval_result)
 
-        # Save all results to a file
-        with open(os.path.join(eval_folder, f'{model_type.replace("Qwen/", "")}_rubber_duck_eval_on_weak_llm_result.jsonl'), 'a') as jsonl_file:
-            eval_result_dict = {
-                'id': query['id'],
-                'eval_result': eval_results
-            }
-            jsonl_file.write(json.dumps(eval_result_dict) + '\n')
+                            # Log comparison result
+                            log.append(f"LLM Output: {json.dumps(llm_output, indent=2)}")
+                            log.append(f"Eval Result: {eval_result}")
+
+                            # 如果成功处理，设置 success 为 True
+                            success = True
+
+                        else:
+                            break  # 如果没有错误信息，跳过该 error_version
+
+                    except (ValueError, json.JSONDecodeError, KeyError) as e:
+                        retries += 1
+                        log.append(f"Error encountered in Attempt {retries}: {str(e)}")
+                        print(f"Error in Attempt {retries}: {str(e)}")
+
+                # 如果重试次数用尽仍未成功
+                if not success:
+                    log.append(f"Failed to process Error Version {idx + 1} after {MAX_RETRIES} attempts.")
+                    print(f"Failed to process Error Version {idx + 1} after {MAX_RETRIES} attempts.")
+
+
+        except (ValueError, json.JSONDecodeError, KeyError) as e:
+            print(f"Exception occurred: {str(e)}")
+
+        finally:
+            # Save all results to a file
+            with open(os.path.join(eval_folder, f'eval_{model_type.replace("Qwen/", "")}_rubber_duck_on_bench_v3_succint_err_msg.jsonl'), 'a') as jsonl_file:
+                eval_result_dict = {
+                    'id': query['id'],
+                    'eval_result': eval_results
+                }
+                jsonl_file.write(json.dumps(eval_result_dict) + '\n')
 
         log_string = "\n".join(log)
         return log_string, eval_results
 
+    def multi_rubber_duck_eval(self, queries, model_type, eval_folder, individual_workspace):
+        log = []
+        query = queries
+
+        log.append(f"\n------------------------------------- Processing Query -------------------------------------")
+        log.append(f"Question ID: {query['id']}")
+        log.append(f"Question: {query['question']}")
+
+        prompt = f"""Question ID: {query['id']}
+            Question: {query['question']}
+                            """
+
+        MAX_RETRIES = 5
+        eval_results = []  # Will store list of lists of single-error eval results
+        print(f"\n**********Verifying ID: {query['id']}**********")
+        try:
+            retries = 0
+            success = False
+            error_message = []
+            while retries < MAX_RETRIES and not success:
+                try:
+                    log.append(
+                        f"\n--- Processing Error {query['id']} (Attempt {retries + 1}) ---")
+
+                    modified_code = query['modified_code']
+                    for exec_o in query['execution_outputs']:
+                        error_message.append(extract_traceback(exec_o))
+                    if error_message is not None:
+                        ground_truth_info = []
+                        for cause_e_l, effect_e_l, error_m in zip(query["cause_error_lines"], query["effect_error_lines"], error_message):
+                            ground_truth_info.append({  # Store ground truth lists
+                                "cause_error_line": cause_e_l,
+                                "effect_error_line": effect_e_l,
+                                "error_message": error_m
+                            })
+
+                        log.append(f"\nModified Code:\n{modified_code}")
+                        log.append(f"Ground Truth Lists: {json.dumps(ground_truth_info, indent=2)}")
+
+                        log.append("\n...............Verifying code with LLM...............")
+                        print(
+                            f"\n...............Verifying error {query['id']} (Attempt {retries + 1})...............")
+
+                        result = self.generate(prompt, model_type=model_type, code=modified_code)
+
+                        start_index = result.find('[')  # Expecting JSON list now for multi-bug detection
+                        end_index = result.rfind(']')
+
+                        if start_index == -1 or end_index == -1:
+                            raise ValueError("No valid JSON List found in the LLM response (Error Detection).")
+
+                        json_list_str = result[start_index:end_index + 1]
+                        # cleaned_json_list_str = clean_json_string(json_list_str)
+                        llm_output_errors = json.loads(
+                            json_list_str)  # Now LLM output is expected to be a list of errors
+
+                        log.append(f"LLM Output (Error Detection): {json.dumps(llm_output_errors, indent=2)}")
+
+                        single_error_eval_results = []  # List to store eval results for each detected error
+                        for llm_error_index, llm_error in enumerate(
+                                llm_output_errors):  # Loop through each detected error
+                            information_single_error = {
+                                'ground_truth': ground_truth_info,
+                                'llm_output_error': llm_error  # Pass the single LLM detected error
+                            }
+
+                            messages = []
+                            messages.append({"role": "system", "content": ''})
+                            messages.append(
+                                {"role": "user", "content": fill_in_placeholders(self.prompts['eval'],
+                                                                                 information_single_error)})  # Use single-error eval prompt
+
+                            print(
+                                f"\n...............Evaluating detected error {llm_error_index + 1}/{len(llm_output_errors)} of error version {query['id']} (Attempt {retries + 1})...............")
+                            eval_result_str = completion_with_backoff(messages,
+                                                                      'gpt-4o')  # Get single-error eval result
+
+                            start_index = eval_result_str.rfind('{')
+                            end_index = eval_result_str.rfind('}')
+                            json_str = eval_result_str[start_index:end_index + 1]
+                            single_error_eval_result = json.loads(json_str)  # Parse single-error eval JSON
+                            single_error_eval_results.append(single_error_eval_result)  # Append single-error result
+
+                            log.append(
+                                f"  Error {llm_error_index + 1} Eval Result: {json.dumps(single_error_eval_result, indent=2)}")
+
+                        eval_results.append(
+                            single_error_eval_results)  # Append list of single-error results for this error_version
+                        success = True
+
+                    else:
+                        break
+
+                except (ValueError, json.JSONDecodeError, KeyError) as e:
+                    retries += 1
+                    log.append(f"Error encountered in Attempt {retries}: {str(e)}")
+                    print(f"Error in Attempt {retries}: {str(e)}")
+
+            if not success:
+                log.append(f"Failed to process Error Version {query['id']} after {MAX_RETRIES} attempts.")
+                print(f"Failed to process Error Version {query['id']} after {MAX_RETRIES} attempts.")
+
+
+        except (ValueError, json.JSONDecodeError, KeyError) as e:
+            print(f"Exception occurred: {str(e)}")
+
+        finally:
+            with open(
+                    os.path.join(eval_folder, f'eval_{model_type.replace("Qwen/", "")}_multi_rubber_duck_on_multi_bench_v2.jsonl'),
+                    'a') as jsonl_file:
+                eval_result_dict = {
+                    'id': query['id'],
+                    'eval_result': eval_results  # Now contains list of lists of single-error evaluations
+                }
+                jsonl_file.write(json.dumps(eval_result_dict) + '\n')
+
+        log_string = "\n".join(log)
+        return log_string, eval_results

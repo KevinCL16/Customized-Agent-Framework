@@ -3,7 +3,7 @@ from agents.error_verifier_agent.agent import ErrorVerifierAgent
 
 
 AGENT_CONFIG = {
-    'workspace': './workspace/InfiAgent',
+    'workspace': './workspace/benchmark_evaluation',
     'agents': [
         {
             'name': 'rubber_duck_eval_agent',
@@ -26,11 +26,11 @@ WORKFLOW = [
         'agent': 'rubber_duck_eval_agent',
         'method': 'rubber_duck_eval',
         'args': {
-            'model_type': 'gpt-4o',
-            'eval_folder': 'workspace/InfiAgent/sklearn_pandas_errors'
+            'model_type': 'gpt-4o-mini',
+            'eval_folder': 'workspace/benchmark_evaluation'
         },
-        'input': {'data': 'workspace/InfiAgent/sklearn_pandas_errors/final_llama-3.1-8b_direct_generate_dabench_hard_annotation.jsonl'},
-        'data_range': [23, 743],
+        'input': {'data': 'workspace/benchmark_evaluation/bench_final_annotation_v3.jsonl'},
+        'data_range': [0, 164],
         'output': 'rubber_duck_eval_result',
         'output_type': 'analysis'
     },

@@ -2,7 +2,7 @@ import io
 import sys
 import os
 from agents.agent_environment import AgentEnvironment
-from config.library_error_multi_step_config import AGENT_CONFIG, WORKFLOW
+from config.multi_bug_eval_agent_config import AGENT_CONFIG, WORKFLOW
 import importlib
 
 

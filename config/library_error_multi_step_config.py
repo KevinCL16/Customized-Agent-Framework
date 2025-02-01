@@ -3,7 +3,7 @@ from agents.error_suggest_agent.agent import ErrorSuggestAgent
 
 
 AGENT_CONFIG = {
-    'workspace': './workspace',
+    'workspace': './workspace/DSEval',
     'agents': [
         {
             'name': 'library_error_multi_step_agent',
@@ -29,8 +29,8 @@ WORKFLOW = [
             'model_type': 'claude-3-5-sonnet-20240620',
             'data_folder': 'InfiAgent_data/da-dev-tables'
         },
-        'input': {'data': 'benchmark_data/matplotbench-q-code.jsonl'}, # workspace/InfiAgent/correct_codes/hard_da-dev-q-code-a.jsonl
-        'data_range': [0, 75],  # Specify the question IDs you want to process
+        'input': {'data': 'workspace/InfiAgent/correct_codes/dseval-q-code.jsonl'}, # workspace/InfiAgent/correct_codes/hard_da-dev-q-code-a.jsonl
+        'data_range': [0, 30],  # Specify the question IDs you want to process
         'output': 'library_error_multi_step_result',
         'output_type': 'analysis'  # Specify the output type here
     },

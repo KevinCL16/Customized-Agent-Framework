@@ -1,5 +1,18 @@
 import json
 import re
+import pandas as pd
+
+
+def extract_traceback(error_str):
+    """
+    从错误信息字符串中提取 'Traceback (most recent call last):' 及其之后的报错信息。
+    """
+    pattern = r"Traceback \(most recent call last\):.*"
+    match = re.search(pattern, error_str, re.DOTALL)
+    if match:
+        return match.group(0)
+    else:
+        return None
 
 
 def extract_error_lines(execution_output):
@@ -129,7 +142,8 @@ def find_cause_and_effect_error_lines_for_weak_analysis(jsonl_file_path, output_
                     # 将 cause_error_line 和 effect_error_line 添加到 error_version 中
                     error_version["effect_error_line"] = effect_error_line
                     error_version["cause_error_line"] = cause_error_line
-                    print("未找到足够的报错行代码")
+                    print("仅有一行报错代码，同行报错")
+                    consistent_count += 1
 
             # 修改后的 entry 保留在原位置
             entries.append(entry)
@@ -142,7 +156,51 @@ def find_cause_and_effect_error_lines_for_weak_analysis(jsonl_file_path, output_
         for entry in entries:
             output_file.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
+
+def find_error_message_error_type(jsonl_file_path):
+    """
+    遍历 JSONL 文件，检查 execution_output 中的报错行是否和 modified_line 一致。
+    """
+    error_type_count = {}  # 用于记录错误类型的统计
+
+    with open(jsonl_file_path, "r", encoding="utf-8") as file:
+        for line in file:
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError as e:
+                print(f"JSON 解码错误: {e}")
+                continue
+
+            error_versions = entry.get("error_versions", [])
+            for error_version in error_versions:
+                execution_output = error_version.get("execution_output", "")
+                error_message = extract_traceback(execution_output)
+
+                # 确保 error_message 是字符串
+                if not isinstance(error_message, str):
+                    error_message = ""
+
+                # 使用正则表达式匹配错误类型
+                pattern = r"(?<=\n)(\w+Error):"
+                match = re.search(pattern, error_message)
+
+                if match:
+                    error_type = match.group(1)  # 提取错误类型
+                    error_type_count[error_type] = error_type_count.get(error_type, 0) + 1
+
+    # 将统计结果转换为 DataFrame
+    df = pd.DataFrame(list(error_type_count.items()), columns=["Error Type", "Count"])
+    df = df.sort_values(by="Count", ascending=False)  # 按错误出现次数降序排序
+
+    # 输出统计表格
+    print("\n错误类型统计表格：")
+    print(df.to_string(index=False))
+
+    return df
+
+
 # 测试函数，传入包含 JSONL 数据的文件路径
-jsonl_file_path = r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\DSEval\sklearn_pandas_errors\filtered_claude-3-5-sonnet-20240620_dseval_monitored_errors.jsonl.jsonl"  # 替换为您的 JSONL 文件路径
-jsonl_output_path = "final_claude-3-5-sonnet_injection_dseval_annotation.jsonl"
-compare_error_and_modified_line(jsonl_file_path, jsonl_output_path)
+jsonl_file_path = r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\sklearn_pandas_errors\filtered_llama-3.1-8b-instant_matplotbench_monitored_errors_with_use_agg.jsonl"  # 替换为您的 JSONL 文件路径
+jsonl_output_path = r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\sklearn_pandas_errors\c_a_e_llama-3.1-8b-instant_matplotbench_monitored_errors_with_use_agg.jsonl"
+
+find_cause_and_effect_error_lines_for_weak_analysis(jsonl_file_path, jsonl_output_path)

@@ -406,7 +406,7 @@ class ErrorSuggestAgent(GenericAgent):
 
             # Save results to JSONL file
             queries.update(result_dict)
-            with open(os.path.join(error_code_directory, 'library_errors.jsonl'), 'a') as jsonl_file:
+            with open(os.path.join(error_code_directory, 'gpt-4o_dabench_hard_library_errors.jsonl'), 'a') as jsonl_file:
                 jsonl_file.write(json.dumps(queries) + '\n')
 
         except json.JSONDecodeError as e:
@@ -438,7 +438,7 @@ class ErrorSuggestAgent(GenericAgent):
             code_lines = clean_code.split('\n')
             import_lines = []
             body_lines = []
-            
+
             for line in code_lines:
                 if line.strip().startswith(('import ', 'from ')):
                     import_lines.append(line)
@@ -508,7 +508,7 @@ class ErrorSuggestAgent(GenericAgent):
                 log.append(f"\nError in case {i}: {error_msg}")
 
         # Save the updated queries with execution results
-        output_file = os.path.join(error_code_directory, f'{model_type}_matplotbench_monitored_errors.jsonl')
+        output_file = os.path.join(error_code_directory, f'{model_type}_matplotbench_monitored_errors_with_use_agg.jsonl')
         with open(output_file, 'a') as f:
             f.write(json.dumps(queries) + '\n')
 
@@ -665,7 +665,7 @@ The error should:
 The expected output format is given below:
 ```json
 {{
-    "modified_code": "Complete code with the injected error",
+    "modified_code": "The **complete** version of the code with the injected error. Ensure the output contains the entire modified code, not just the changed line.",
     "original_line": "The original line that was modified",
     "modified_line": "The new version of the line with the error",
     "error_type": "Type of error (e.g., LogicalError, RuntimeError)",
@@ -707,7 +707,7 @@ The expected output format is given below:
         os.makedirs(output_dir, exist_ok=True)
 
         queries.update(structured_output)
-        with open(os.path.join(output_dir, f'{model_type}_matplotbench_library_errors.jsonl'), 'a', encoding='utf-8') as jsonl_file:
+        with open(os.path.join(output_dir, f'{model_type}_dseval_library_errors_v2.jsonl'), 'a', encoding='utf-8') as jsonl_file:
             jsonl_file.write(json.dumps(queries) + '\n')
 
         log_file = os.path.join(os.path.join(individual_workspace, model_type), f'processing_log_{queries["id"]}.txt')

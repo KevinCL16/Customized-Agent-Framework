@@ -26,13 +26,13 @@ WORKFLOW = [
         'agent': 'library_error_snoop_agent',
         'method': 'run_snoop',
         'args': {
-            'model_type': 'claude-3-5-sonnet-20240620',
+            'model_type': 'llama-3.1-8b-instant',
             'data_folder': 'InfiAgent_data/da-dev-tables'
         },
-        'input': {'data': 'workspace/sklearn_pandas_errors/claude-3-5-sonnet-20240620_matplotbench_library_errors.jsonl'},
+        'input': {'data': 'workspace/sklearn_pandas_errors/llama-3.1-8b-instant_matplotbench_weak_direct_analysis_with_use_agg.jsonl'},
         # workspace/InfiAgent/correct_codes/hard_da-dev-q-code-a.jsonl
-        # workspace/InfiAgent/sklearn_pandas_errors/library_errors.jsonl
-        'data_range': [24, 75],  # Specify the question IDs you want to process
+        # workspace/InfiAgent/sklearn_pandas_errors/gpt-4o_dabench_hard_library_errors.jsonl
+        'data_range': [0, 75],  # Specify the question IDs you want to process
         'output': 'library_error_snoop_result',
         'output_type': 'analysis'  # Specify the output type here
     },

@@ -1,12 +1,11 @@
 import logging
 import pdb
-
 import openai
-from agents.config.openai import API_KEY, BASE_URL, temperature
+from agents.config.openai import API_KEY, BASE_URL, temperature, THU_BASE_URL, THU_API_KEY
 from tenacity import (
     retry,
     stop_after_attempt,
-    wait_random_exponential, stop_after_delay,
+    wait_random_exponential, stop_after_delay, RetryError
 )
 from models.model_config import MODEL_CONFIG
 
@@ -16,8 +15,8 @@ def print_chat_message(messages):
         logging.info(f"{message['role']}: {message['content']}")
 
 
-# @retry(wait=wait_random_exponential(min=0.02, max=1), stop=(stop_after_delay(10) | stop_after_attempt(100)))
-def completion_with_backoff(messages, model_type):
+@retry(wait=wait_random_exponential(min=0.1, max=20), stop=(stop_after_delay(30) | stop_after_attempt(100)))
+def completion_with_backoff(messages, model_type, backend='OpenRouter'):
 
     if model_type in MODEL_CONFIG.keys():
 
@@ -63,11 +62,19 @@ def completion_with_backoff(messages, model_type):
         return None
 
     else:
-        openai.api_key = API_KEY
-        openai.base_url = BASE_URL
+        if backend == 'THU':
+            client = openai.OpenAI(
+                api_key=THU_API_KEY,
+                base_url=THU_BASE_URL,
+            )
+        else:
+            client = openai.OpenAI(
+                api_key=API_KEY,
+                base_url=BASE_URL,
+            )
 
         try:
-            response = openai.chat.completions.create(
+            response = client.chat.completions.create(
             model=model_type,
             messages=messages,
             temperature=temperature,
@@ -75,9 +82,11 @@ def completion_with_backoff(messages, model_type):
             result = response.choices[0].message
             answer = result.content
             return answer
-        except KeyError:
 
-            return None
+        # except TypeError as e:
+        #     print(e)
+        #     return e
+
         except openai.BadRequestError as e:
             print(e)
             return e

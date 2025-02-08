@@ -1,2 +1,2 @@
-D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_2\code_action_gpt-4o_initial_1.py:50: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
+D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_2\code_action_gpt-4o_initial_1.py:40: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
   plt.show()

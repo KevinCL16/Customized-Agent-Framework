@@ -1,48 +1,42 @@
+# -*- coding: utf-8 -*-
+
+import matplotlib
+matplotlib.use('Agg')  # Use a non-interactive backend suitable for scripts
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Step 2: Create the data
-z = np.linspace(-5, 5, 100)
-w = np.linspace(-5, 5, 100)
+# Data preparation
+z = np.linspace(-10, 10, 400)  # create 400 points from -10 to 10
+w = np.linspace(-5, 5, 400)    # create 400 points from -5 to 5
 
-# Step 3: Create the subplots
-fig, axs = plt.subplots(3, 3, sharex='col', sharey='row', figsize=(9, 9))
-plt.subplots_adjust(wspace=0, hspace=0)  # Step 4: Remove spacing
+# Create subplots with shared axes
+fig, axs = plt.subplots(nrows=3, ncols=3, sharex='col', sharey='row', figsize=(8, 8))
 
-# Define the plotting data and specifications for each subplot:
-plots = [
-    (z, w, 'z', 'w'),
-    (z**3, w, 'z**3', 'w', 'blue'),
-    (-z, w + 1, '-z', 'w + 1', 'yellow'),
-    (-z**3, w + 2, '-z**3', 'w + 2', 'purple'),
-    (z**2, w**2, 'z**2', 'w**2', 'brown'),
-    (-z**2, w**2 + 1, '-z**2', 'w**2 + 1', 'pink'),
-    (z**2, -w**2 + 2, 'z**2', '-w**2 + 2', 'grey'),
-    (-z**2, -w**2 + 3, '-z**2', '-w**2 + 3', 'black'),
-    (z, -w, 'z', '-w', 'white')
-]
+# Adjust layout to remove spacing between subplots
+fig.subplots_adjust(hspace=0, wspace=0)
 
-# Step 5: Plot the data in each subplot
-for i, (data_x, data_y, label_x, label_y, *color) in enumerate(plots):
-    ax = axs[i // 3, i % 3]
-    ax.plot(data_x, data_y, color[0] if color else 'green')  # Default to 'green' if no color specified
-    
-    # Step 6: Label only the outermost subplots
-    if i // 3 < 2:
-        ax.tick_params(labelbottom=False)
-    if i % 3 > 0:
-        ax.tick_params(labelleft=False)
+# Plot in each subplot with specified colors
+axs[0, 0].plot(z, w, color='b')          # Plot z against w
+axs[0, 1].plot(z**3, w, color='blue')    # Plot z cubed against w
+axs[0, 2].plot(-z, w + 1, color='yellow')    # Plot negative z against w + 1
+axs[1, 0].plot(-z**3, w + 2, color='purple') # Plot negative z cubed against w + 2
+axs[1, 1].plot(z**2, w**2, color='brown')    # Plot z squared against w squared
+axs[1, 2].plot(-z**2, w**2 + 1, color='pink') # Plot negative z squared against w squared + 1
+axs[2, 0].plot(z**2, -w**2 + 2, color='grey') # Plot z squared against negative w squared + 2
+axs[2, 1].plot(-z**2, -w**2 + 3, color='black') # Plot negative z squared against negative w squared + 3
+axs[2, 2].plot(z, -w, color='white')        # Plot z against negative w
 
-    if i // 3 == 2:
-        ax.set_xlabel(label_x)
-    if i % 3 == 0:
-        ax.set_ylabel(label_y)
+# Hide tick labels for non-outermost plots
+for i in range(2):
+    for j in range(3):
+        axs[i, j].label_outer()
 
-# Step 7: Set the overall title
+for j in range(1, 3):
+    for i in range(3):
+        axs[i, j].label_outer()
+
+# Set overall title for the figure
 fig.suptitle('Sharing x per column, y per row')
 
-# Step 8: Save the plot to a PNG file
+# Save the plot to a PNG file
 plt.savefig('novice.png')
-
-# Display the plot
-plt.show()

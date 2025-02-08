@@ -449,7 +449,7 @@ Output Format:
     },
     ... (and so on for all identified errors)
 ]```
-There will be more than one error in the code. BUT output only ONE json dict in your response.
+There will be more than one error in the code. BUT output only ONE json block in your response.
 '''
 
 MULTI_RUBBER_DUCK_EVAL_USER_PROMPT = '''You are given the following query and data analysis code.
@@ -483,5 +483,5 @@ Output Format:
     },
     ... (and so on for all identified errors)
 ]```
-There will be more than one error in the code. BUT output only ONE json dict in your response.
+There will be more than one error in the code. BUT output only ONE json block in your response.
 '''

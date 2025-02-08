@@ -16,82 +16,58 @@ def calculate_ground_truth_error_counts(ground_truth_file_path):
     return gt_error_counts
 
 
-def calculate_evaluation_scores_with_metrics(eval_jsonl_file_path, ground_truth_file_path):
+def calculate_evaluation_scores_with_metrics_corrected(eval_jsonl_file_path, ground_truth_file_path):
     """
-    Calculates evaluation metrics (Precision, Recall, F1-score, Accuracy) for each dimension
-    (cause_line, effect_line, error_type, error_message) separately.
-
-    Args:
-        eval_jsonl_file_path (str): Path to the evaluation JSONL file.
-        ground_truth_file_path (str): Path to the ground truth JSONL file.
-
-    Returns:
-        dict: A dictionary containing aggregated metrics for each dimension.
+    Corrected function to calculate dimension-level evaluation metrics (Precision, Recall, F1-score, Accuracy).
+    FN is calculated correctly at the dimension level. Accuracy denominator is corrected.
     """
 
-    id_level_metrics = {}
-    all_ids = []
-    gt_error_counts_dict = calculate_ground_truth_error_counts(ground_truth_file_path)
-
-    dimension_metrics_overall = {  # Initialize overall metrics for each dimension
-        "cause_line": {"TP": 0, "FP": 0, "FN": 0},
-        "effect_line": {"TP": 0, "FP": 0, "FN": 0},
-        "error_type": {"TP": 0, "FP": 0, "FN": 0},
-        "error_message": {"TP": 0, "FP": 0, "FN": 0},
+    gt_error_counts_dict = calculate_ground_truth_error_counts(ground_truth_file_path) # Get GT error counts per ID
+    dimension_metrics_overall = { # Initialize overall dimension metrics
+        "cause_line": {"TP": 0, "FP": 0, "FN": 0, "GT_Instances": 0}, # Added GT_Instances to track total GT instances per dimension
+        "effect_line": {"TP": 0, "FP": 0, "FN": 0, "GT_Instances": 0},
+        "error_type": {"TP": 0, "FP": 0, "FN": 0, "GT_Instances": 0},
+        "error_message": {"TP": 0, "FP": 0, "FN": 0, "GT_Instances": 0},
     }
 
+    processed_ids = set() # To avoid recounting GT instances for the same ID
     with open(eval_jsonl_file_path, 'r') as f:
         for line in f:
             data = json.loads(line)
             id_val = data['id']
             eval_results_list = data['eval_result']
+            gt_error_count = gt_error_counts_dict.get(id_val, 0) # Get GT error count for this ID
 
-            all_ids.append(id_val)
-            gt_error_count = gt_error_counts_dict.get(id_val, 0)
-
-            dimension_metrics_id = {  # Metrics per dimension per ID - not used for final output, but helpful for debugging
-                "cause_line": {"TP": 0, "FP": 0, "FN": 0},
-                "effect_line": {"TP": 0, "FP": 0, "FN": 0},
-                "error_type": {"TP": 0, "FP": 0, "FN": 0},
-                "error_message": {"TP": 0, "FP": 0, "FN": 0},
-            }
+            if id_val not in processed_ids: # Count GT instances only once per ID
+                for dimension in dimension_metrics_overall:
+                    dimension_metrics_overall[dimension]["GT_Instances"] += gt_error_count # Assuming each error version in GT contributes to GT_Instances
+                processed_ids.add(id_val)
 
             for error_version_eval_results in eval_results_list:
                 for single_error_eval in error_version_eval_results:
-
-                    # For each dimension, update TP, FP, FN independently
                     for dimension in ["cause_line", "effect_line", "error_type", "error_message"]:
                         score_key = f"{dimension}_score"
-                        if dimension != "error_message":
-                            is_tp_dimension = single_error_eval[score_key] == 1
-                        else: # For error_message, use relaxed TP condition
-                            is_tp_dimension = single_error_eval[score_key] >= 0.75
+                        is_tp_dimension = (single_error_eval[score_key] == 1 if dimension != "error_message" else single_error_eval[score_key] >= 0.75)
 
                         if is_tp_dimension:
                             dimension_metrics_overall[dimension]["TP"] += 1
-                            dimension_metrics_id[dimension]["TP"] += 1
                         else:
                             dimension_metrics_overall[dimension]["FP"] += 1
-                            dimension_metrics_id[dimension]["FP"] += 1
-
-
-            # Calculate dimension-wise FN (same for all dimensions as FN is about missed *errors*, not dimensions)
-             # Using cause_line TP as proxy for correctly identified errors
-            for dimension in ["cause_line", "effect_line", "error_type", "error_message"]:
-                fn_errors = max(0, gt_error_count - dimension_metrics_id[dimension]["TP"])
-                dimension_metrics_overall[dimension]["FN"] += fn_errors
-
 
     aggregated_dimension_metrics = {}
     for dimension in ["cause_line", "effect_line", "error_type", "error_message"]:
         tp = dimension_metrics_overall[dimension]["TP"]
         fp = dimension_metrics_overall[dimension]["FP"]
-        fn = dimension_metrics_overall[dimension]["FN"]
+        # Corrected FN calculation: FN = Total Ground Truth Instances - (TP + FP) for each dimension
+        fn = max(0, dimension_metrics_overall[dimension]["GT_Instances"] - (tp + fp))
+        dimension_metrics_overall[dimension]["FN"] = fn # Update FN in overall metrics
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        recall = tp / (tp + fn + fp) if (tp + fn + fp) > 0 else 0
         f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-        accuracy = tp / (tp + fp + fn) if (tp + fp + fn) > 0 else 0
+        # Corrected Accuracy calculation: Accuracy = TP / Total Ground Truth Instances for this dimension
+        accuracy = tp / dimension_metrics_overall[dimension]["GT_Instances"] if dimension_metrics_overall[dimension]["GT_Instances"] > 0 else 0
+
 
         aggregated_dimension_metrics[dimension] = {
             "precision": precision,
@@ -100,7 +76,8 @@ def calculate_evaluation_scores_with_metrics(eval_jsonl_file_path, ground_truth_
             "accuracy": accuracy,
             "TP": tp,
             "FP": fp,
-            "FN": fn
+            "FN": fn,
+            "GT_Instances": dimension_metrics_overall[dimension]["GT_Instances"] # Added GT_Instances to output
         }
 
     return aggregated_dimension_metrics
@@ -124,10 +101,9 @@ def calculate_ground_truth_error_counts(ground_truth_file_path):
 
 # Example usage:
 if __name__ == '__main__':
-    eval_jsonl_file = 'eval_gpt-4o_multi_rubber_duck_on_multi_bench_v2.jsonl'  # Replace with your evaluation JSONL file path
-    ground_truth_jsonl_file = 'bench_final_annotation_with_multi_errors_v2.jsonl' # Replace with your ground truth JSONL file path
+    eval_jsonl_file = 'eval_deepseek-r1_nitro_multi_rubber_duck_on_multi_bench_v2.jsonl'
+    ground_truth_jsonl_file = 'bench_final_annotation_with_multi_errors_v2.jsonl'
 
-    # Calculate and print dimension-wise metrics
-    dimension_wise_metrics = calculate_evaluation_scores_with_metrics(eval_jsonl_file, ground_truth_jsonl_file)
-    print("Dimension-wise Metrics (Precision, Recall, F1, Accuracy):")
-    print(json.dumps(dimension_wise_metrics, indent=4))
+    dimension_wise_metrics_corrected = calculate_evaluation_scores_with_metrics_corrected(eval_jsonl_file, ground_truth_jsonl_file)
+    print("\nCorrected Dimension-wise Metrics (Precision, Recall, F1, Accuracy):")
+    print(json.dumps(dimension_wise_metrics_corrected, indent=4))

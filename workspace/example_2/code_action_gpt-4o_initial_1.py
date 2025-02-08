@@ -1,50 +1,40 @@
 import matplotlib
-matplotlib.use('Agg')  # Use the 'Agg' backend for non-interactive plotting
+matplotlib.use('Agg')  # Use a non-interactive backend
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Step 2: Create the data
-z = np.linspace(-5, 5, 100)
-w = np.linspace(-5, 5, 100)
+# Create a range of values for z and w
+z = np.linspace(-10, 10, 100)
+w = np.linspace(-10, 10, 100)
 
-# Step 3: Create the subplots
-fig, axs = plt.subplots(3, 3, sharex='col', sharey='row', figsize=(9, 9))
-plt.subplots_adjust(wspace=0, hspace=0)  # Step 4: Remove spacing
-
-# Define the plotting data and specifications for each subplot:
-plots = [
-    (z, w, 'z', 'w'),
-    (z**3, w, 'z**3', 'w', 'blue'),
-    (-z, w + 1, '-z', 'w + 1', 'yellow'),
-    (-z**3, w + 2, '-z**3', 'w + 2', 'purple'),
-    (z**2, w**2, 'z**2', 'w**2', 'brown'),
-    (-z**2, w**2 + 1, '-z**2', 'w**2 + 1', 'pink'),
-    (z**2, -w**2 + 2, 'z**2', '-w**2 + 2', 'grey'),
-    (-z**2, -w**2 + 3, '-z**2', '-w**2 + 3', 'black'),
-    (z, -w, 'z', '-w', 'white')
-]
-
-# Step 5: Plot the data in each subplot
-for i, (data_x, data_y, label_x, label_y, *color) in enumerate(plots):
-    ax = axs[i // 3, i % 3]
-    ax.plot(data_x, data_y, color[0] if color else 'green')  # Default to 'green' if no color specified
-    
-    # Step 6: Label only the outermost subplots
-    if i // 3 < 2:
-        ax.tick_params(labelbottom=False)
-    if i % 3 > 0:
-        ax.tick_params(labelleft=False)
-
-    if i // 3 == 2:
-        ax.set_xlabel(label_x)
-    if i % 3 == 0:
-        ax.set_ylabel(label_y)
-
-# Step 7: Set the overall title
+# Create the figure and 3x3 subplots
+fig, axs = plt.subplots(3, 3, figsize=(10, 10), sharex='col', sharey='row')
+fig.subplots_adjust(wspace=0, hspace=0)
 fig.suptitle('Sharing x per column, y per row')
 
-# Step 8: Save the plot to a PNG file
-plt.savefig('novice.png')
+# Plot the data on each subplot with specified colors
+
+# Top row
+axs[0, 0].plot(z, w, color='red')
+axs[0, 1].plot(z, z**3, color='blue')
+axs[0, 2].plot(-z, w + 1, color='yellow')
+
+# Middle row
+axs[1, 0].plot(-z**3, w + 2, color='purple')
+axs[1, 1].plot(z**2, w**2, color='brown')
+axs[1, 2].plot(-z**2, w**2 + 1, color='pink')
+
+# Bottom row
+axs[2, 0].plot(z**2, -w**2 + 2, color='grey')
+axs[2, 1].plot(-z**2, -w**2 + 3, color='black')
+axs[2, 2].plot(z, -w, color='white')
+
+# Label only the outermost subplots
+for ax in axs.flat:
+    ax.label_outer()
+
+# Save the plot to a file
+plt.savefig("novice.png")
 
 # Display the plot
 plt.show()

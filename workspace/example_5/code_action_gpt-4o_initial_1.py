@@ -1,56 +1,36 @@
-import matplotlib
-matplotlib.use('Agg')  # Set backend to Agg for saving figures
-
 import matplotlib.pyplot as plt
 
-# Step 1: Import Necessary Libraries
-import matplotlib.pyplot as plt
+# Explicitly set the backend to 'Agg' to handle environments that may not be set up for interactive plotting
+plt.switch_backend('Agg')
 
-# Step 2: Prepare Data for the Pie Chart
-labels_pie = ['Apples', 'Oranges', 'Bananas']
-sizes_pie = [35, 45, 20]
-explode_pie = (0.1, 0, 0)  # To separate the 'Apples' slice
+# Data for the pie chart
+fruit_labels = ['Apples', 'Oranges', 'Bananas']
+fruit_sizes = [35, 45, 20]
+fruit_explode = (0.1, 0, 0)  # Explode the 'Apples' slice
 
-# Step 3: Create the Pie Chart
-fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+# Data for the stacked bar chart
+age_groups = ['Under 18', '18-30', '30-50', 'Over 50']
+apple_distribution = [25, 40, 20, 15]
 
-# Pie chart
-ax1.pie(sizes_pie, explode=explode_pie, labels=labels_pie, autopct='%1.1f%%', startangle=140, colors=['#ff9999','#66b3ff','#99ff99'])
-ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
-ax1.set_title('Fruit Distribution')
+# Create a figure with two subplots
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
-# Add lines connecting pie chart slice to bar chart
-ax1.annotate('', xy=(0.1, 0.1), xytext=(1, 0.5), xycoords='axes fraction', arrowprops=dict(arrowstyle='-|>', lw=1, color='black'))
+# Plot the pie chart
+ax1.pie(fruit_sizes, explode=fruit_explode, labels=fruit_labels, autopct='%1.1f%%', startangle=90)
+ax1.set_title('Fruit Distribution in Basket')
 
-# Step 4: Prepare Data for the Stacked Bar Chart
-labels_bar = ['<18', '18-30', '30-50', '50+']
-percentages_apples = [25, 40, 20, 15]
-percentages_oranges = [30, 35, 25, 10]
-percentages_bananas = [45, 25, 20, 10]
-
-# Calculate cumulative percentages for stacked bar chart
-bottom_oranges = percentages_apples
-bottom_bananas = [x + y for x, y in zip(percentages_apples, percentages_oranges)]
-
-# Step 5: Create the Stacked Bar Chart
-# Stacked bar chart
-ax2.bar(labels_bar, percentages_apples, color='#ff9999', label='Apples')
-ax2.bar(labels_bar, percentages_oranges, bottom=bottom_oranges, color='#66b3ff', label='Oranges')
-ax2.bar(labels_bar, percentages_bananas, bottom=bottom_bananas, color='#99ff99', label='Bananas')
-
-# Add legend
-ax2.legend(loc='upper left')
-
-# Set labels and title
+# Plot the stacked bar chart
+ax2.bar(age_groups, apple_distribution, color='skyblue', label='Apples')
+ax2.set_title('Distribution of People Favoring Apples')
 ax2.set_ylabel('Percentage')
-ax2.set_xlabel('Age Groups')
-ax2.set_title('Apples Favorability by Age')
+ax2.set_ylim(0, 100)
+ax2.legend()
 
-# Adjust layout
+# Adjust layout for clarity and aesthetics
 plt.tight_layout()
 
-# Save plot to file
+# Save the plot to a file
 plt.savefig('novice.png')
 
-# Display plot (commented out for saving to file)
+# Display the plot (optional if running with a non-interactive backend)
 # plt.show()

@@ -1,53 +1,44 @@
+# -*- coding: utf-8 -*-
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import numpy as np
 
-# Data for the pie chart
-labels = ['Apples', 'Oranges', 'Bananas']
-sizes = [35, 45, 20]
-explode = (0.1, 0, 0)  # only "explode" the 1st slice (i.e. 'Apples')
-colors = ['lightcoral', 'lightskyblue', 'lightgreen']
+# Data
+fruits = ['Apples', 'Oranges', 'Bananas']
+fruit_distribution = [35, 45, 20]
+age_groups = ['Under 18', '18-30', '30-50', 'Over 50']
+apple_favorability = [25, 40, 20, 15]
+orange_favorability = [30, 30, 20, 20]  # Added for stackability
+banana_favorability = [5, 10, 15, 20]  # Added for stackability
 
-# Data for the stacked bar chart
-age_groups = ['<18', '18-30', '30-50', '50+']
-apple_distribution = [25, 40, 20, 15]
+# Setup figure and axes
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
 
-# Create subplots
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 7))
+# Plot pie chart
+explode = (0.1, 0, 0)  # Only "explode" the 1st slice (i.e. 'Apples')
+ax1.pie(fruit_distribution, labels=fruits, autopct='%1.1f%%', explode=explode, startangle=140)
+ax1.set_title('Fruit Distribution in Basket')
 
-# Pie chart
-wedges, texts, autotexts = ax1.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%',
-                                   shadow=True, startangle=140)
-ax1.set_title('Fruit Distribution')
-
-# Stacked bar chart
-bars = ax2.bar(age_groups, apple_distribution, color='lightcoral', label='Apples')
-ax2.set_title('Apples Favorability by Age')
+# Plot stacked bar chart
+ax2.bar(age_groups, apple_favorability, color='lightgreen', label='Apples')
+ax2.bar(age_groups, orange_favorability, bottom=apple_favorability, color='orange', label='Oranges')
+ax2.bar(age_groups, banana_favorability, bottom=[i+j for i,j in zip(apple_favorability, orange_favorability)], color='yellow', label='Bananas')
+ax2.set_title('Fruit Favorability by Age Group')
 ax2.set_xlabel('Age Groups')
-ax2.set_ylabel('Percentage')
+ax2.set_ylabel('Percentage (%)')
 ax2.legend()
 
-# Connect the pie chart slice to the bar chart
-# Coordinates for the lines
-apple_wedge = wedges[0]
-theta1, theta2 = apple_wedge.theta1, apple_wedge.theta2
-center, r = apple_wedge.center, apple_wedge.r
-bar_x = [rect.get_x() + rect.get_width() / 2 for rect in bars]
+# Add connecting lines
+x_center_pie = -1.6
+x_bar_start = 0.3
+y_pie = [-0.45, -0.1]  # Adjusted positions based on pie positions
+y_bar = [28, 18]       # Approx matching values for pie connections to bar
 
-# Calculate the middle angle of the apple slice
-theta = (theta1 + theta2) / 2
-x = r * np.cos(np.radians(theta)) + center[0]
-y = r * np.sin(np.radians(theta)) + center[1]
+for i, yb in zip(y_pie, y_bar):
+    ax2.plot([x_center_pie, x_bar_start], [yb, yb], 'k-', lw=1)
 
-# Draw lines
-for bx in bar_x:
-    ax1.annotate('', xy=(bx, 1), xytext=(x, y),
-                 arrowprops=dict(facecolor='black', shrink=0.05, lw=1))
+# Adjust layout for clarity
+plt.tight_layout()
 
-# Adjust layout
-plt.subplots_adjust(wspace=0.4)
-
-# Save the plot
+# Save the final plot to a file
 plt.savefig('novice_final.png')
-
-# Display the plot
-plt.show()

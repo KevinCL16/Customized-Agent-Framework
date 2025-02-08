@@ -195,7 +195,7 @@ Return your output in the following **JSON format**:
     ]
 }
 ```
-}'''
+'''
 
 LIBRARY_USER_PROMPT = '''### Original Query:
 {{query}}

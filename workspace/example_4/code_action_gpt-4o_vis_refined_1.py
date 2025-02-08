@@ -2,54 +2,59 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import matplotlib.transforms as transforms
+import matplotlib
 
-# Ensure the correct backend is used
-plt.switch_backend('agg')
+# Set the matplotlib backend to avoid issues with certain environments
+matplotlib.use('Agg')
 
-# Generate the correlated dataset
+# Set the figure size
+plt.figure(figsize=(6, 6))
+
+# Generate correlated data
 np.random.seed(0)
-mean = [4, 3.5]
-cov = [[0.6, 0.85], [-0.3, 0.25]]
-x, y = np.random.multivariate_normal(mean, cov, 700).T
+mean1 = [1, 1]
+mean2 = [7, 6]
+cov1 = [[1, 0.75], [0.75, 1]]  # Correlation ~0.75
+cov2 = [[1, -0.2], [-0.2, 1]]  # Correlation ~-0.2
 
-# Create the plot
-fig, ax = plt.subplots(figsize=(6, 6))
-ax.scatter(x, y, s=10)
+data1 = np.random.multivariate_normal(mean1, cov1, 350)
+data2 = np.random.multivariate_normal(mean2, cov2, 350)
+data = np.vstack((data1, data2))
 
-# Add vertical and horizontal lines
-ax.axhline(y=mean[1], color='grey', linestyle='--')
-ax.axvline(x=mean[0], color='grey', linestyle='--')
+# Create scatter plot
+plt.scatter(data[:, 0], data[:, 1], alpha=0.5)
 
-# Function to draw ellipses
-def confidence_ellipse(x, y, ax, n_std=1.0, facecolor='none', **kwargs):
-    if x.size != y.size:
-        raise ValueError("x and y must be the same size")
-    
-    cov = np.cov(x, y)
+# Add vertical and horizontal lines at the mean of the data
+mean_data = np.mean(data, axis=0)
+plt.axhline(y=mean_data[1], color='grey', linestyle='--')
+plt.axvline(x=mean_data[0], color='grey', linestyle='--')
+
+# Function to draw confidence ellipses
+def confidence_ellipse(mean, cov, ax, n_std=1.0, facecolor='none', **kwargs):
     pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
     ell_radius_x = np.sqrt(1 + pearson)
     ell_radius_y = np.sqrt(1 - pearson)
     ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2, facecolor=facecolor, **kwargs)
-    
     scale_x = np.sqrt(cov[0, 0]) * n_std
     scale_y = np.sqrt(cov[1, 1]) * n_std
-    transf = transforms.Affine2D().rotate_deg(180 * np.arcsin(pearson) / np.pi).scale(scale_x, scale_y).translate(np.mean(x), np.mean(y))
-    
+    transf = transforms.Affine2D().rotate_deg(45).scale(scale_x, scale_y).translate(mean[0], mean[1])
     ellipse.set_transform(transf + ax.transData)
     return ax.add_patch(ellipse)
 
 # Overlay confidence ellipses
-confidence_ellipse(x, y, ax, n_std=1, edgecolor='firebrick', label='$1\sigma$')
-confidence_ellipse(x, y, ax, n_std=2, edgecolor='fuchsia', linestyle='--', label='$2\sigma$')
-confidence_ellipse(x, y, ax, n_std=3, edgecolor='blue', linestyle=':', label='$3\sigma$')
+ax = plt.gca()
+confidence_ellipse(mean_data, np.cov(data, rowvar=False), ax, n_std=1, edgecolor='firebrick', label='$1\sigma$')
+confidence_ellipse(mean_data, np.cov(data, rowvar=False), ax, n_std=2, edgecolor='fuchsia', linestyle='--', label='$2\sigma$')
+confidence_ellipse(mean_data, np.cov(data, rowvar=False), ax, n_std=3, edgecolor='blue', linestyle=':', label='$3\sigma$')
 
-# Highlight the specific point
-ax.plot(1, 1, 'ro', label='Point (1, 1)')
+# Highlight specific point
+plt.scatter(1, 1, color='red', label='Point (1, 1)')
 
 # Add title and legend
-ax.set_title('Different Standard Deviations')
-ax.legend()
+plt.title('Different standard deviations')
+plt.legend()
 
 # Save the plot
-plt.savefig('novice_final.png')
-plt.show()
+plt.savefig("novice_final.png")
+
+# Note: Use plt.show() only if running in an interactive environment, not needed for saving files with 'Agg' backend

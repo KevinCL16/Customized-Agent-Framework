@@ -26,11 +26,11 @@ WORKFLOW = [
         'agent': 'rubber_duck_eval_agent',
         'method': 'rubber_duck_eval',
         'args': {
-            'model_type': 'gpt-4o-mini',
+            'model_type': 'o1-mini',
             'eval_folder': 'workspace/benchmark_evaluation'
         },
         'input': {'data': 'workspace/benchmark_evaluation/bench_final_annotation_v3.jsonl'},
-        'data_range': [0, 164],
+        'data_range': [151, 155],
         'output': 'rubber_duck_eval_result',
         'output_type': 'analysis'
     },

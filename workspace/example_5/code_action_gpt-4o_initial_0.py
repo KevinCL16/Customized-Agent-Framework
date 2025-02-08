@@ -1,46 +1,42 @@
+# -*- coding: utf-8 -*-
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Step 2: Prepare Data for the Pie Chart
-labels_pie = ['Apples', 'Oranges', 'Bananas']
-sizes_pie = [35, 45, 20]
-explode_pie = (0.1, 0, 0)  # To separate the 'Apples' slice
+# Pie chart data
+fruit_labels = ['Apples', 'Oranges', 'Bananas']
+fruit_sizes = [35, 45, 20]
+explode = (0.1, 0, 0)  # Exploding the 'Apples' slice
 
-# Step 4: Prepare Data for the Stacked Bar Chart
-labels_bar = ['<18', '18-30', '30-50', '50+']
-percentages_apples = [25, 40, 20, 15]
-percentages_oranges = [30, 35, 25, 10]
-percentages_bananas = [45, 25, 20, 10]
+# Stacked bar chart data
+age_groups = ['Under 18', '18-30', '30-50', 'Over 50']
+apples_distribution = [25, 40, 20, 15]
 
-# Calculate cumulative percentages for stacked bar chart
-bottom_oranges = percentages_apples
-bottom_bananas = [x + y for x, y in zip(percentages_apples, percentages_oranges)]
+# Set up the figure and axes
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6), gridspec_kw={'width_ratios': [1, 1.5]})
 
-# Step 3 & 5: Create the Pie Chart and Stacked Bar Chart
-fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12, 6))
+# Create the Pie Chart
+ax1.pie(fruit_sizes, explode=explode, labels=fruit_labels, autopct='%1.1f%%', startangle=90, shadow=True)
+ax1.set_title('Fruit Distribution in Basket')
 
-# Pie chart
-ax1.pie(sizes_pie, explode=explode_pie, labels=labels_pie, autopct='%1.1f%%', startangle=140, colors=['#ff9999','#66b3ff','#99ff99'])
-ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle
-ax1.set_title('Fruit Distribution')
-
-# Stacked bar chart
-ax2.bar(labels_bar, percentages_apples, color='#ff9999', label='Apples')
-ax2.bar(labels_bar, percentages_oranges, bottom=bottom_oranges, color='#66b3ff', label='Oranges')
-ax2.bar(labels_bar, percentages_bananas, bottom=bottom_bananas, color='#99ff99', label='Bananas')
-
-# Add legend
-ax2.legend(loc='upper left')
-
-# Set labels and title
-ax2.set_ylabel('Percentage')
+# Create the Stacked Bar Chart
+bar = ax2.bar(age_groups, apples_distribution, color='lightgreen')
+ax2.set_title('Apples Favorability by Age Group')
+ax2.set_ylabel('Percentage (%)')
+ax2.set_ylim(0, 100)  # Ensuring the y-axis limit is 100 for percentage
 ax2.set_xlabel('Age Groups')
-ax2.set_title('Apples Favorability by Age')
+
+# Draw connection lines (manual adjustment for visual clarity)
+# These lines start from the 'Apples' segment tip of the pie chart to the respective age group on the bar chart.
+line1 = plt.Line2D([0.22, 1.05], [0.4, apples_distribution[0]/100 + 0.03], color='black', linewidth=1)
+line2 = plt.Line2D([0.22, 1.05], [0.4, apples_distribution[-1]/100 + 0.03], color='black', linewidth=1)
+fig.add_artist(line1)
+fig.add_artist(line2)
 
 # Adjust layout
 plt.tight_layout()
 
-# Save plot to file
-plt.savefig('novice.png')
-
-# Display plot
-plt.show()
+# Save the plot to a PNG file
+plt.savefig("novice.png")

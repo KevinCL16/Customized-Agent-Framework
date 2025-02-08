@@ -32,7 +32,7 @@ class AnalysisOutputHandler(OutputHandler):
     def handle(self, method_output, agent_name, model_type, individual_workspace, args):
         log, analysis_result = method_output
         file_name = f'analysis_{agent_name}_{model_type}.txt'
-        model_dependent_directory = os.path.join(individual_workspace, model_type)
+        model_dependent_directory = os.path.join(individual_workspace, model_type.replace(":", "_"))
         os.makedirs(model_dependent_directory, exist_ok=True)
         return log, str(analysis_result), file_name
 
@@ -104,7 +104,7 @@ class AgentEnvironment:
                 return f"Error executing {file_name}: {str(e)}"
 
     def log_action(self, action, agent_name, model_type, code, log, individual_workspace):
-        model_type = model_type.replace("Qwen/", "")
+        model_type = model_type.replace("Qwen/", "").replace("deepseek/", "").replace("google/", "").replace(":", "_")
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_entry = f"""
 {'=' * 80}

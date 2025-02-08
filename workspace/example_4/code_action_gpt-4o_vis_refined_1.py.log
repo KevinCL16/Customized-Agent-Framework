@@ -1,4 +1,0 @@
-D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_4\code_action_gpt-4o_vis_refined_1.py:13: RuntimeWarning: covariance is not symmetric positive-semidefinite.
-  x, y = np.random.multivariate_normal(mean, cov, 700).T
-D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_4\code_action_gpt-4o_vis_refined_1.py:55: UserWarning: FigureCanvasAgg is non-interactive, and thus cannot be shown
-  plt.show()

@@ -1,8 +1,0 @@
-D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_4\code_action_gpt-4o_initial_1.py:12: RuntimeWarning: covariance is not symmetric positive-semidefinite.
-  data = np.random.multivariate_normal(mean, cov, 700)
-Traceback (most recent call last):
-  File "D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_4\code_action_gpt-4o_initial_1.py", line 36, in <module>
-    plot_confidence_ellipse(ax, mean, cov, 1, edgecolor='firebrick', linestyle='-')
-  File "D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_4\code_action_gpt-4o_initial_1.py", line 24, in plot_confidence_ellipse
-    pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
-TypeError: list indices must be integers or slices, not tuple

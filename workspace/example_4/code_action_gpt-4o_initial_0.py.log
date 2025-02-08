@@ -1,16 +1,6 @@
-D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_4\code_action_gpt-4o_initial_0.py:8: RuntimeWarning: covariance is not symmetric positive-semidefinite.
-  data = np.random.multivariate_normal(mean, cov, 700)
 Traceback (most recent call last):
-  File "D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_4\code_action_gpt-4o_initial_0.py", line 11, in <module>
-    plt.figure(figsize=(6, 6))
-  File "D:\miniconda3\lib\site-packages\matplotlib\pyplot.py", line 934, in figure
-    manager = new_figure_manager(
-  File "D:\miniconda3\lib\site-packages\matplotlib\pyplot.py", line 464, in new_figure_manager
-    _warn_if_gui_out_of_main_thread()
-  File "D:\miniconda3\lib\site-packages\matplotlib\pyplot.py", line 441, in _warn_if_gui_out_of_main_thread
-    canvas_class = cast(type[FigureCanvasBase], _get_backend_mod().FigureCanvas)
-  File "D:\miniconda3\lib\site-packages\matplotlib\pyplot.py", line 280, in _get_backend_mod
-    switch_backend(rcParams._get("backend"))  # type: ignore[attr-defined]
-  File "D:\miniconda3\lib\site-packages\matplotlib\pyplot.py", line 343, in switch_backend
-    canvas_class = module.FigureCanvas
-AttributeError: module 'backend_interagg' has no attribute 'FigureCanvas'. Did you mean: 'FigureCanvasAgg'?
+  File "D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_4\code_action_gpt-4o_initial_0.py", line 50, in <module>
+    plot_confidence_ellipse(mean1, cov1, ax, n_std=1, facecolor='none', edgecolor='firebrick', linestyle='solid', label='$1\\sigma$')
+  File "D:\ComputerScience\CODES\MatPlotAgent-main\workspace\example_4\code_action_gpt-4o_initial_0.py", line 33, in plot_confidence_ellipse
+    pearson = cov[0, 1] / np.sqrt(cov[0, 0] * cov[1, 1])
+TypeError: list indices must be integers or slices, not tuple

@@ -26,11 +26,11 @@ WORKFLOW = [
         'agent': 'multi_rubber_duck_eval_agent',
         'method': 'multi_rubber_duck_eval',
         'args': {
-            'model_type': 'gpt-4o-mini',
+            'model_type': 'deepseek/deepseek-r1:nitro',
             'eval_folder': 'workspace/benchmark_evaluation'
         },
         'input': {'data': 'workspace/benchmark_evaluation/bench_final_annotation_with_multi_errors_v2.jsonl'},
-        'data_range': [0, 364],
+        'data_ids': [9, 110],
         'output': 'multi_rubber_duck_eval_result',
         'output_type': 'analysis'
     },

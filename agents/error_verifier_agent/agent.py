@@ -2,6 +2,9 @@ import json
 import os
 import re
 import shutil
+import traceback
+
+from tenacity import RetryError
 from tqdm import tqdm
 from agents.generic_agent import GenericAgent
 from agents.openai_chatComplete import completion_with_backoff
@@ -105,7 +108,7 @@ class ErrorVerifierAgent(GenericAgent):
         self.query = kwargs.get('query', '')
         self.data_information = kwargs.get('data_information', None)
 
-    def generate(self, user_prompt, model_type, code):
+    def generate(self, user_prompt, model_type, code, backend='OpenRouter'):
         workspace_structure = print_filesys_struture(self.workspace)
 
         information = {
@@ -119,7 +122,7 @@ class ErrorVerifierAgent(GenericAgent):
         messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['user'], information)})
 
         self.chat_history = self.chat_history + messages
-        return completion_with_backoff(messages, model_type)
+        return completion_with_backoff(messages, model_type, backend)
 
     def run(self, queries, model_type, code):
         log = []
@@ -408,7 +411,7 @@ class ErrorVerifierAgent(GenericAgent):
                             print(
                                 f"\n...............Verifying error version {idx + 1}/{len(error_versions)} (Attempt {retries + 1})...............")
 
-                            result = self.generate(prompt, model_type=model_type, code=modified_code)
+                            result = self.generate(prompt, model_type=model_type, code=modified_code, backend='THU')
 
                             # Locate the first curly brace to the last one for extracting the JSON object
                             start_index = result.rfind('{')
@@ -419,8 +422,8 @@ class ErrorVerifierAgent(GenericAgent):
 
                             # Extract and parse JSON
                             json_str = result[start_index:end_index + 1]
-                            cleaned_json_str = clean_json_string(json_str)
-                            llm_output = json.loads(cleaned_json_str)
+                            # cleaned_json_str = clean_json_string(json_str)
+                            llm_output = json.loads(json_str)
 
                             information = {
                                 'ground_truth': ground_truth,
@@ -434,11 +437,11 @@ class ErrorVerifierAgent(GenericAgent):
 
                             print(
                                 f"\n...............Evaluating error version {idx + 1}/{len(error_versions)} (Attempt {retries + 1})...............")
-                            eval_result = completion_with_backoff(messages, 'gpt-4o')
+                            eval_completion = completion_with_backoff(messages, 'gpt-4o', backend='THU')
 
-                            start_index = eval_result.rfind('{')
-                            end_index = eval_result.rfind('}')
-                            json_str = eval_result[start_index:end_index + 1]
+                            start_index = eval_completion.rfind('{')
+                            end_index = eval_completion.rfind('}')
+                            json_str = eval_completion[start_index:end_index + 1]
                             eval_result = json.loads(json_str)
                             eval_results.append(eval_result)
 
@@ -452,10 +455,11 @@ class ErrorVerifierAgent(GenericAgent):
                         else:
                             break  # 如果没有错误信息，跳过该 error_version
 
-                    except (ValueError, json.JSONDecodeError, KeyError) as e:
+                    except (ValueError, json.JSONDecodeError, KeyError, TypeError, RetryError) as e:
                         retries += 1
                         log.append(f"Error encountered in Attempt {retries}: {str(e)}")
                         print(f"Error in Attempt {retries}: {str(e)}")
+                        # traceback.print_exc()
 
                 # 如果重试次数用尽仍未成功
                 if not success:
@@ -468,7 +472,7 @@ class ErrorVerifierAgent(GenericAgent):
 
         finally:
             # Save all results to a file
-            with open(os.path.join(eval_folder, f'eval_{model_type.replace("Qwen/", "")}_rubber_duck_on_bench_v3_succint_err_msg.jsonl'), 'a') as jsonl_file:
+            with open(os.path.join(eval_folder, f'eval_{model_type.replace("deepseek/", "").replace(":", "_")}_rubber_duck_on_bench_v3_succint_err_msg.jsonl'), 'a') as jsonl_file:
                 eval_result_dict = {
                     'id': query['id'],
                     'eval_result': eval_results
@@ -553,7 +557,7 @@ class ErrorVerifierAgent(GenericAgent):
                             print(
                                 f"\n...............Evaluating detected error {llm_error_index + 1}/{len(llm_output_errors)} of error version {query['id']} (Attempt {retries + 1})...............")
                             eval_result_str = completion_with_backoff(messages,
-                                                                      'gpt-4o')  # Get single-error eval result
+                                                                      'gpt-4o', backend='THU')  # Get single-error eval result
 
                             start_index = eval_result_str.rfind('{')
                             end_index = eval_result_str.rfind('}')
@@ -586,7 +590,7 @@ class ErrorVerifierAgent(GenericAgent):
 
         finally:
             with open(
-                    os.path.join(eval_folder, f'eval_{model_type.replace("Qwen/", "")}_multi_rubber_duck_on_multi_bench_v2.jsonl'),
+                    os.path.join(eval_folder, f'eval_{model_type.replace("deepseek/", "").replace(":", "_")}_multi_rubber_duck_on_multi_bench_v2.jsonl'),
                     'a') as jsonl_file:
                 eval_result_dict = {
                     'id': query['id'],

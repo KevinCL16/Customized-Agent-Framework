@@ -117,7 +117,7 @@ def analyze_libraries_with_openai(code_snippet):
                 {"role": "system", "content": "You are a Python expert."},
                 {"role": "user", "content": f"Given the following Python code:\n{code_snippet}\n"
                                              f"Determine which data science libraries (e.g., pandas, numpy, sklearn, matplotlib) "
-                                             f"are being used in this code snippet. Return only the name of the used library, e.g., pandas/numpy/sklearn/matplotlib ."}
+                                             f"are being used in this code snippet. Return only the name of the used library, e.g., pandas/numpy/sklearn/matplotlib. If you cannot determine which library was used, output your best guess, do not output anything except the above libraries."}
             ]
         )
         # 提取生成的结果
@@ -187,7 +187,7 @@ def find_low_scoring_annotations(file_path):
 
 def library_statistics():
     # 读取 JSONL 文件
-    file_path = r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\InfiAgent\sklearn_pandas_errors\bench_final_annotation_v2.jsonl"  # 替换为您的文件路径
+    file_path = r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\benchmark_evaluation\bench_final_annotation_v4.jsonl"  # 替换为您的文件路径
     with open(file_path, 'r') as file:
         data = [json.loads(line) for line in file]
 
@@ -198,11 +198,18 @@ def library_statistics():
             for version in item['error_versions']:
                 if 'cause_error_line' in version:
                     cause_error_lines.append(version['cause_error_line'])
+
+    '''for line in cause_error_lines:
+        print(line + '\n')'''
+
     # 分析每段代码
     library_usage_counter = Counter()
     for line in tqdm(cause_error_lines):
-        libraries = analyze_libraries_with_openai(line)
-        library_usage_counter.update(libraries)
+        if line != "main()":
+            libraries = analyze_libraries_with_openai(line)
+            library_usage_counter.update(libraries)
+        else:
+            library_usage_counter.update("undetermined")
 
     # 转换为 DataFrame 格式并保存
     library_usage_df = pd.DataFrame(library_usage_counter.items(), columns=["Library", "Usage"])
@@ -256,7 +263,7 @@ def annotation_quality_check():
 
 
 if __name__ == "__main__":
-    file_path = 'annotation_check_results.jsonl'  # Replace with the path to your annotations file
+    '''file_path = 'annotation_check_results.jsonl'  # Replace with the path to your annotations file
     low_scores = find_low_scoring_annotations(file_path)
 
     if low_scores:
@@ -265,4 +272,6 @@ if __name__ == "__main__":
         for annotation in low_scores:
             print(annotation)
     else:
-        print("No annotations found with scores <= 5.")
+        print("No annotations found with scores <= 5.")'''
+
+    library_statistics()

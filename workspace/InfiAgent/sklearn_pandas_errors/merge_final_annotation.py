@@ -4,7 +4,7 @@ import glob
 # 定义输入的jsonl文件路径模式（比如当前目录下的所有.jsonl文件）
 input_files = [r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\sklearn_pandas_errors\c_a_e_claude-3-5-sonnet-20240620_matplotbench_monitored_errors_v2_with_use_agg.jsonl", r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\sklearn_pandas_errors\c_a_e_llama-3.1-8b-instant_matplotbench_monitored_errors_with_use_agg.jsonl", r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\InfiAgent\sklearn_pandas_errors\c_a_e_gpt-4o_dabench_hard_monitored_errors_with_use_agg.jsonl", r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\InfiAgent\sklearn_pandas_errors\c_a_e_llama-3.1-8b-instant_dabench_hard_monitored_errors.jsonl", r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\InfiAgent\sklearn_pandas_errors\final_format_claude_inject_dseval_annotation.jsonl", r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\DSEval\sklearn_pandas_errors\c_a_e_llama-3.1-8b-instant_dseval_monitored_errors.jsonl"]
 
-input_file = r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\benchmark_evaluation\bench_final_annotation_v3.jsonl"
+input_file = r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\benchmark_evaluation\bench_final_annotation_with_multi_errors_v2.jsonl"
 output_file = r"D:\ComputerScience\CODES\MatPlotAgent-main\workspace\benchmark_evaluation\bench_annotation_for_multi_error_generation.jsonl"
 
 
@@ -13,15 +13,22 @@ def count_errors(files):
     统计多个jsonl文件中所有error_versions的总数。
     """
     total_errors = 0
+    total_queries = 0
+    error_number_count = {}
 
     with open(files, "r") as f:
         for line in f:
             data = json.loads(line)
             error_versions = data.get("error_versions", [])
             total_errors += len(error_versions)
+            total_queries += 1
             # total_errors += 1
+            entry_id = data.get("id")
+            error_number_count[f"entry_{entry_id}"] = question_word_count
+            error_number_df = pd.DataFrame(list(error_number_count.items()), columns=["Query ID", "Word Count"])
+            error_number_df = error_number_df.sort_values(by="Word Count", ascending=False)  # 可以按代码行数排序，方便查看
 
-    return total_errors
+    return total_errors, total_queries
 
 
 def load_jsonl_files(files):
@@ -100,8 +107,9 @@ def save_to_jsonl(data, output_path):
 
 def count_errors_main():
     # 统计错误数量
-    total_errors = count_errors(input_file)
-    print(f"共有 {total_errors} 个错误版本（error_versions）。")
+    total_errors, total_queries = count_errors(input_file)
+    print(f"共有 {total_errors} 个错误版本（error_versions）"
+          f"共有 {total_queries} 个Query")
 
 
 def merge_annotation_files():

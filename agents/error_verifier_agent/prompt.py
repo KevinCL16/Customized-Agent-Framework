@@ -485,3 +485,153 @@ Output Format:
 ]```
 There will be more than one error in the code. BUT output only ONE json block in your response.
 '''
+
+RUBBER_DUCK_ZERO_COT_SYSTEM_PROMPT = '''You will be provided with an original query and a data analysis code. Your task is to:
+
+1. Read the question carefully and identify if there are any logic error injected into the code.
+2. For each logic error:
+  - Locate the Cause: Specify the exact line of code that causes the issue.
+  - Locate the Effect: Identify the line of code where the error will be triggered and the interpreter will throw an error.
+  - Error Description: Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback).
+
+First, think step-by-step about the code and identify the logic error. Explain your reasoning process clearly.
+
+After presenting your CoT reasoning, output the answer in the following JSON format. Ensure you provide both the CoT reasoning and the JSON output in your response.
+
+Output Format:
+
+**CoT Output:**
+Your step-by-step reasoning process here
+
+**JSON Output:**
+```json
+{
+    "cause_line": "Specify the exact line of code causing the issue",
+    "effect_line": "Specify the exact line of code where the error will be triggered",
+    "error_message": "Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback)"
+}
+```
+
+There will be only one error in the code. Output your CoT reasoning first, followed by the one ONLY json output in your response.'''
+
+RUBBER_DUCK_ZERO_COT_USER_PROMPT = '''You are given the following query and data analysis code.
+
+### Original Query:
+{{query}}
+
+
+### Data Analysis Code:
+{{code}}
+
+
+You will be provided with an original query and a data analysis code. Your task is to:
+
+1. Read the question carefully and identify if there are any logic error injected into the code.
+2. For each logic error:
+  - Locate the Cause: Specify the exact line of code that causes the issue.
+  - Locate the Effect: Identify the line of code where the error will be triggered and the interpreter will throw an error.
+  - Error Description: Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback).
+
+First, think step-by-step about the code and identify the logic error. Explain your reasoning process clearly.
+
+After presenting your CoT reasoning, output the answer in the following JSON format. Ensure you provide both the CoT reasoning and the JSON output in your response.
+
+Output Format:
+
+**CoT Output:**
+Your step-by-step reasoning process here
+
+**JSON Output:**
+```json
+{
+    "cause_line": "Specify the exact line of code causing the issue",
+    "effect_line": "Specify the exact line of code where the error will be triggered",
+    "error_message": "Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback)"
+}
+```
+
+There will be only one error in the code. Output your CoT reasoning first, followed by the one ONLY json output in your response.
+'''
+
+MULTI_RUBBER_DUCK_ZERO_COT_SYSTEM_PROMPT = '''You will be provided with a data analysis code. Your task is to:
+
+1. Read the code carefully and identify all logic errors injected into the code. There will be two or more logic errors in the code.
+2. For each logic error you identify:
+  - Locate the Cause: Specify the exact line of code that causes the issue.
+  - Locate the Effect: Identify the line of code where the error will be triggered and the interpreter will throw an error or where the incorrect behavior is observed.
+  - Error Description: Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback). Focus on the *type* of error and the *reason* if possible from the output.
+
+First, think step-by-step through the code and identify each logic error.  Explain your reasoning process for each error clearly.
+
+After presenting your CoT reasoning for all identified errors, output the answer in the following JSON format. Ensure you provide both the CoT reasoning and the JSON output in your response.
+
+Output Format:
+
+**Chain of Thought (CoT) Output:**
+Your step-by-step reasoning process for error 1 here, 
+Your step-by-step reasoning process for error 2 here
+... (and so on for all identified errors)
+
+**JSON Output:**
+```json
+[
+    {
+        "cause_line": "Specify the exact line of code causing error 1",
+        "effect_line": "Specify the exact line of code where error 1 is triggered",
+        "error_message": "Concise error message for error 1"
+    },
+    {
+        "cause_line": "Specify the exact line of code causing error 2",
+        "effect_line": "Specify the exact line of code where error 2 is triggered",
+        "error_message": "Concise error message for error 2"
+    },
+    ... (and so on for all identified errors)
+]```
+There will be more than one error in the code. Output your CoT reasoning first, followed by only ONE json block in your response.'''
+
+MULTI_RUBBER_DUCK_ZERO_COT_USER_PROMPT = '''You are given the following query and data analysis code.
+
+### Original Query:
+{{query}}
+
+
+### Data Analysis Code:
+{{code}}
+
+
+You will be provided with a data analysis code. Your task is to:
+
+1. Read the code carefully and identify all logic errors injected into the code. There will be two or more logic errors in the code.
+2. For each logic error you identify:
+  - Locate the Cause: Specify the exact line of code that causes the issue.
+  - Locate the Effect: Identify the line of code where the error will be triggered and the interpreter will throw an error or where the incorrect behavior is observed.
+  - Error Description: Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback). Focus on the *type* of error and the *reason* if possible from the output.
+
+First, think step-by-step through the code and identify each logic error.  Explain your reasoning process for each error clearly.
+
+After presenting your CoT reasoning for all identified errors, output the answer in the following JSON format. Ensure you provide both the CoT reasoning and the JSON output in your response.
+
+Output Format:
+
+**Chain of Thought (CoT) Output:**
+Your step-by-step reasoning process for error 1 here, 
+Your step-by-step reasoning process for error 2 here
+... (and so on for all identified errors)
+
+**JSON Output:**
+```json
+[
+    {
+        "cause_line": "Specify the exact line of code causing error 1",
+        "effect_line": "Specify the exact line of code where error 1 is triggered",
+        "error_message": "Concise error message for error 1"
+    },
+    {
+        "cause_line": "Specify the exact line of code causing error 2",
+        "effect_line": "Specify the exact line of code where error 2 is triggered",
+        "error_message": "Concise error message for error 2"
+    },
+    ... (and so on for all identified errors)
+]```
+There will be more than one error in the code. Output your CoT reasoning first, followed by only ONE json block in your response.
+'''

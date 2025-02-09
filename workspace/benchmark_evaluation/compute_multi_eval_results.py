@@ -47,7 +47,10 @@ def calculate_evaluation_scores_with_metrics_corrected(eval_jsonl_file_path, gro
                 for single_error_eval in error_version_eval_results:
                     for dimension in ["cause_line", "effect_line", "error_type", "error_message"]:
                         score_key = f"{dimension}_score"
-                        is_tp_dimension = (single_error_eval[score_key] == 1 if dimension != "error_message" else single_error_eval[score_key] >= 0.75)
+                        try:
+                            is_tp_dimension = (single_error_eval[score_key] == 1 if dimension != "error_message" else single_error_eval[score_key] >= 0.75)
+                        except KeyError as e:
+                            print(f"{e}\nid:{id_val}")
 
                         if is_tp_dimension:
                             dimension_metrics_overall[dimension]["TP"] += 1
@@ -67,7 +70,6 @@ def calculate_evaluation_scores_with_metrics_corrected(eval_jsonl_file_path, gro
         f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
         # Corrected Accuracy calculation: Accuracy = TP / Total Ground Truth Instances for this dimension
         accuracy = tp / dimension_metrics_overall[dimension]["GT_Instances"] if dimension_metrics_overall[dimension]["GT_Instances"] > 0 else 0
-
 
         aggregated_dimension_metrics[dimension] = {
             "precision": precision,
@@ -101,9 +103,10 @@ def calculate_ground_truth_error_counts(ground_truth_file_path):
 
 # Example usage:
 if __name__ == '__main__':
-    eval_jsonl_file = 'eval_deepseek-r1_nitro_multi_rubber_duck_on_multi_bench_v2.jsonl'
+    eval_jsonl_file = 'eval_o1-mini_multi_rubber_duck_on_multi_bench_v2.jsonl'
     ground_truth_jsonl_file = 'bench_final_annotation_with_multi_errors_v2.jsonl'
 
+    model_type = eval_jsonl_file.split("_")[1]
     dimension_wise_metrics_corrected = calculate_evaluation_scores_with_metrics_corrected(eval_jsonl_file, ground_truth_jsonl_file)
-    print("\nCorrected Dimension-wise Metrics (Precision, Recall, F1, Accuracy):")
+    print(f"\n{model_type} Dimension-wise Metrics (Precision, Recall, F1, Accuracy) for Multi-Bug Detection:")
     print(json.dumps(dimension_wise_metrics_corrected, indent=4))

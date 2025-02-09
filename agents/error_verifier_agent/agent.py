@@ -472,7 +472,7 @@ class ErrorVerifierAgent(GenericAgent):
 
         finally:
             # Save all results to a file
-            with open(os.path.join(eval_folder, f'eval_{model_type.replace("deepseek/", "").replace(":", "_")}_rubber_duck_on_bench_v3_succint_err_msg.jsonl'), 'a') as jsonl_file:
+            with open(os.path.join(eval_folder, f'eval_{model_type.replace("Qwen/", "").replace(":", "_")}_rubber_duck_CoT_on_bench_v3.jsonl'), 'a') as jsonl_file:
                 eval_result_dict = {
                     'id': query['id'],
                     'eval_result': eval_results
@@ -525,18 +525,26 @@ class ErrorVerifierAgent(GenericAgent):
                         print(
                             f"\n...............Verifying error {query['id']} (Attempt {retries + 1})...............")
 
-                        result = self.generate(prompt, model_type=model_type, code=modified_code)
+                        result = self.generate(prompt, model_type=model_type, code=modified_code, backend='THU')
 
-                        start_index = result.find('[')  # Expecting JSON list now for multi-bug detection
-                        end_index = result.rfind(']')
+                        # start_index = result.rfind('[')  # Expecting JSON list now for multi-bug detection
+                        # end_index = result.rfind(']')
 
-                        if start_index == -1 or end_index == -1:
-                            raise ValueError("No valid JSON List found in the LLM response (Error Detection).")
+                        match = re.search(r"\[\s*\{.*?\}\s*\]", result, re.DOTALL)
 
-                        json_list_str = result[start_index:end_index + 1]
+                        if match:
+                            json_list_str = match.group(0)
+                        else:
+                            json_list_str = None
+
+                        # if start_index == -1 or end_index == -1:
+                            # raise ValueError("No valid JSON List found in the LLM response (Error Detection).")
+
+                        llm_output_errors = json.loads(json_list_str)
+
+                        # json_list_str = result[start_index:end_index + 1]
                         # cleaned_json_list_str = clean_json_string(json_list_str)
-                        llm_output_errors = json.loads(
-                            json_list_str)  # Now LLM output is expected to be a list of errors
+                        # llm_output_errors = json.loads(json_list_str)  # Now LLM output is expected to be a list of errors
 
                         log.append(f"LLM Output (Error Detection): {json.dumps(llm_output_errors, indent=2)}")
 
@@ -590,7 +598,7 @@ class ErrorVerifierAgent(GenericAgent):
 
         finally:
             with open(
-                    os.path.join(eval_folder, f'eval_{model_type.replace("deepseek/", "").replace(":", "_")}_multi_rubber_duck_on_multi_bench_v2.jsonl'),
+                    os.path.join(eval_folder, f'eval_{model_type.replace("Qwen/", "").replace(":", "_")}_multi_rubber_duck_CoT_on_multi_bench_v2.jsonl'),
                     'a') as jsonl_file:
                 eval_result_dict = {
                     'id': query['id'],

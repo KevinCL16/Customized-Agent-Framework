@@ -1,5 +1,7 @@
 import logging
 import pdb
+import traceback
+
 import openai
 from agents.config.openai import API_KEY, BASE_URL, temperature, THU_BASE_URL, THU_API_KEY
 from tenacity import (
@@ -87,8 +89,9 @@ def completion_with_backoff(messages, model_type, backend='OpenRouter'):
         #     print(e)
         #     return e
 
-        except openai.BadRequestError as e:
+        except Exception as e:
             print(e)
+            print(traceback.format_exc())
             return e
 
 

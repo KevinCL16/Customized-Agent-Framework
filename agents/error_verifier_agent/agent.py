@@ -446,7 +446,9 @@ class ErrorVerifierAgent(GenericAgent):
                             eval_results.append(eval_result)
 
                             # Log comparison result
-                            log.append(f"LLM Output: {json.dumps(llm_output, indent=2)}")
+                            log.append(f"LLM Output: {json.dumps(result, indent=2)}")
+                            print(f"LLM Output: {json.dumps(result, indent=2)}")
+                            log.append(f"JSON Output: {json.dumps(llm_output, indent=2)}")
                             log.append(f"Eval Result: {eval_result}")
 
                             # 如果成功处理，设置 success 为 True
@@ -472,7 +474,7 @@ class ErrorVerifierAgent(GenericAgent):
 
         finally:
             # Save all results to a file
-            with open(os.path.join(eval_folder, f'eval_{model_type.replace("Qwen/", "").replace(":", "_")}_rubber_duck_CoT_on_bench_v3.jsonl'), 'a') as jsonl_file:
+            with open(os.path.join(eval_folder, f'eval_{model_type.replace("deepseek/", "").replace(":", "_")}_rubber_duck_case_study_on_bench_v3.jsonl'), 'a') as jsonl_file:
                 eval_result_dict = {
                     'id': query['id'],
                     'eval_result': eval_results

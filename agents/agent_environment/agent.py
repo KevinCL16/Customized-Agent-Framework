@@ -78,7 +78,7 @@ class AgentEnvironment:
         workspace_list = []
         for instruction in self.instructions:
             d_id = instruction['id']
-            individual_directory = os.path.join(self.workspace, f'example_{d_id}')
+            individual_directory = os.path.join(self.workspace, f'example {d_id}')
             os.makedirs(individual_directory, exist_ok=True)
             workspace_list.append(individual_directory)
 
@@ -373,7 +373,7 @@ LOG OUTPUT:
             try:
                 results = {}
                 # Create individual workspace for this instruction
-                individual_workspace = os.path.join(self.workspace, f'example_{instruction["id"]}')
+                individual_workspace = os.path.join(self.workspace, f'example {instruction["id"]}')
                 os.makedirs(individual_workspace, exist_ok=True)
                 
                 # Copy data file if needed

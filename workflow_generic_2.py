@@ -2,7 +2,7 @@ import io
 import sys
 import os
 from agents.agent_environment import AgentEnvironment
-from config.error_verifier_agent_config import AGENT_CONFIG, WORKFLOW
+from config.dabench_quantitative_experiment_config import AGENT_CONFIG, WORKFLOW
 import importlib
 
 

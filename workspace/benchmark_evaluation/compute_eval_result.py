@@ -1,6 +1,6 @@
 import json
 
-eval_jsonl_file = 'eval_o1-mini_rubber_duck_on_bench_v3_succint_err_msg.jsonl'
+eval_jsonl_file = 'eval_gpt-4o_rubber_duck_on_bench_v3_succint_err_msg.jsonl'
 ground_truth_jsonl_file = 'bench_final_annotation_v3.jsonl'
 
 
@@ -33,6 +33,8 @@ def calculate_single_bug_evaluation_metrics(eval_jsonl_file_path, ground_truth_f
 
         for record in records:
             eval_results = record["eval_result"]
+            if record["id"] not in [1, 2, 3, 4, 5, 51, 52, 53, 54, 55, 100, 101, 102, 103, 104, 151, 152, 153, 154, 155]:
+                continue
             for eval_result in eval_results:
                 num_eval_results += 1
                 for dimension in ["cause_line", "effect_line", "error_type", "error_message"]:
@@ -89,6 +91,9 @@ def get_subset_total_errors(eval_jsonl_file_path, ground_truth_file_path):
     with open(eval_jsonl_file_path, 'r') as f:
         for line in f:
             record = json.loads(line)
+            if record["id"] not in [1, 2, 3, 4, 5, 51, 52, 53, 54, 55, 100, 101, 102, 103, 104, 151, 152, 153, 154,
+                                    155]:
+                continue
             eval_ids.add(record["id"]) # Assuming each record in eval_jsonl has an "id"
 
     subset_total_errors = 0
@@ -112,6 +117,8 @@ with open(eval_jsonl_file, 'r') as file:
     records = [json.loads(line) for line in file]
 num_eval_results_counted = 0
 for record in records:
+    if record["id"] not in [1, 2, 3, 4, 5, 51, 52, 53, 54, 55, 100, 101, 102, 103, 104, 151, 152, 153, 154, 155]:
+        continue
     num_eval_results_counted += len(record["eval_result"])
 
 # Initialize total scores and max scores (rest of the code remains mostly the same)
@@ -124,6 +131,8 @@ max_error_message_score = 0
 
 # Calculate scores
 for record in records:
+    if record["id"] not in [1, 2, 3, 4, 5, 51, 52, 53, 54, 55, 100, 101, 102, 103, 104, 151, 152, 153, 154, 155]:
+        continue
     for eval_result in record["eval_result"]:
         total_cause_line_score += eval_result["cause_line_score"]
         total_effect_line_score += eval_result["effect_line_score"]
@@ -133,10 +142,10 @@ for record in records:
         max_error_message_score += 1
 
 # Calculate the percentage scores
-cause_line_percentage = (total_cause_line_score / subset_total_errors) * 100 if subset_total_errors > 0 else 0
-effect_line_percentage = (total_effect_line_score / subset_total_errors) * 100 if subset_total_errors > 0 else 0
-error_type_percentage = (total_error_type_score / subset_total_errors) * 100 if subset_total_errors > 0 else 0
-error_message_percentage = (total_error_message_score / subset_total_errors) * 100 if subset_total_errors > 0 else 0
+cause_line_percentage = (total_cause_line_score / num_eval_results_counted) * 100 if num_eval_results_counted > 0 else 0
+effect_line_percentage = (total_effect_line_score / num_eval_results_counted) * 100 if num_eval_results_counted > 0 else 0
+error_type_percentage = (total_error_type_score / num_eval_results_counted) * 100 if num_eval_results_counted > 0 else 0
+error_message_percentage = (total_error_message_score / num_eval_results_counted) * 100 if num_eval_results_counted > 0 else 0
 
 
 # Print the overall scores
@@ -148,6 +157,7 @@ print(f"Overall Effect Line Score: {effect_line_percentage:.2f}%")
 print(f"Overall Error Type Score: {error_type_percentage:.2f}%")
 print(f"Overall Error Message Score: {error_message_percentage:.2f}%")
 
+model_type = eval_jsonl_file.split("_")[1]
 # Print dimension-wise metrics
-print("\nDimension-wise Metrics (Precision, Recall, F1, Accuracy) for Single-Bug Detection:")
+print(f"\n{model_type} Dimension-wise Metrics (Precision, Recall, F1, Accuracy) for Single-Bug Detection:")
 print(json.dumps(dimension_wise_metrics, indent=4))

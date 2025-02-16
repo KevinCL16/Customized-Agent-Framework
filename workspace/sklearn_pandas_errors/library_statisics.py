@@ -158,6 +158,7 @@ def find_low_scoring_annotations(file_path):
         print(f"Error: An unexpected error occurred: {e}")
         return low_scoring_annotations
 
+    print(f"Annotation total number: {len(annotations)}")
     for annotation in annotations:
         for error_version in annotation:
             try:
@@ -263,7 +264,7 @@ def annotation_quality_check():
 
 
 if __name__ == "__main__":
-    '''file_path = 'annotation_check_results.jsonl'  # Replace with the path to your annotations file
+    file_path = 'annotation_check_results.jsonl'  # Replace with the path to your annotations file
     low_scores = find_low_scoring_annotations(file_path)
 
     if low_scores:
@@ -272,6 +273,6 @@ if __name__ == "__main__":
         for annotation in low_scores:
             print(annotation)
     else:
-        print("No annotations found with scores <= 5.")'''
+        print("No annotations found with scores <= 5.")
 
-    library_statistics()
+    # library_statistics()

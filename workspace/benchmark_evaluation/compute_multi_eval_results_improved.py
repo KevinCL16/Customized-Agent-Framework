@@ -10,6 +10,8 @@ def calculate_ground_truth_error_counts(ground_truth_file_path):
         for line in f:
             gt_data = json.loads(line)
             id_val = gt_data['id']
+            if id_val not in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310]:
+                continue
             # Assuming cause_error_lines (or effect_error_lines) indicates the number of GT errors
             gt_error_count = len(gt_data.get('cause_error_lines', []) or gt_data.get('effect_error_lines', []))
             gt_error_counts[id_val] = gt_error_count
@@ -38,6 +40,8 @@ def calculate_evaluation_scores_exact_match_per_id(eval_jsonl_file_path, ground_
         for line in f:
             data = json.loads(line)
             id_val = data['id']
+            if id_val not in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310]:
+                continue
             eval_results_list = data['eval_result'] # list of error versions
             gt_error_count = gt_error_counts_dict.get(id_val, 0)
             for dimension in ["cause_line", "effect_line", "error_type", "error_message"]:
@@ -102,7 +106,7 @@ def calculate_evaluation_scores_exact_match_per_id(eval_jsonl_file_path, ground_
 
 
 if __name__ == '__main__':
-    eval_jsonl_file = 'eval_o1-mini_multi_rubber_duck_on_multi_bench_v2.jsonl'
+    eval_jsonl_file = 'eval_Qwen2.5-72B-Instruct_multi_rubber_duck_CoT_on_multi_bench_v2.jsonl'
     ground_truth_jsonl_file = 'bench_final_annotation_with_multi_errors_v2.jsonl'
 
     model_type = eval_jsonl_file.split("_")[1]

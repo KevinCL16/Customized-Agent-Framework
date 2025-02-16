@@ -190,6 +190,7 @@ def find_error_message_error_type(jsonl_file_path):
     error_type_count = {}  # 用于记录错误类型的统计
     code_length_count = {}  # 用于记录代码长度的统计
     question_length_count = {}
+    multi_hop_count, no_hop_count = 0, 0
 
     with open(jsonl_file_path, "r", encoding="utf-8") as file:
         for entry_id, line in enumerate(file):
@@ -209,6 +210,8 @@ def find_error_message_error_type(jsonl_file_path):
                 modified_code = error_version.get("modified_code", "")
                 execution_output = error_version.get("execution_output", "")
                 error_message = extract_traceback(execution_output)
+                cause_error_line = error_version.get("cause_error_line", "")
+                effect_error_line = error_version.get("effect_error_line", "")
 
                 # 确保 error_message 是字符串
                 if not isinstance(error_message, str):
@@ -233,6 +236,11 @@ def find_error_message_error_type(jsonl_file_path):
                     continue
                 code_length_count[f"entry_{entry_id}_error_{error_id}"] = line_count  # 使用 entry_id 和 error_id 作为键
 
+                if cause_error_line != effect_error_line:
+                    multi_hop_count += 1
+                else:
+                    no_hop_count += 1
+
     # 将错误类型统计结果转换为 DataFrame
     error_df = pd.DataFrame(list(error_type_count.items()), columns=["Error Type", "Count"])
     error_df = error_df.sort_values(by="Count", ascending=False)  # 按错误出现次数降序排序
@@ -256,6 +264,8 @@ def find_error_message_error_type(jsonl_file_path):
     # 输出问题长度统计表格 (可选，如果需要直接查看)
     print("\n问题长度统计表格：")
     print(question_length_df.to_string(index=False))
+
+    print(f"\nMulti Hop cause and effect pair number: {multi_hop_count}\nNo Hop cause and effect number: {no_hop_count}")
 
     return error_df, code_length_df, question_length_df
 

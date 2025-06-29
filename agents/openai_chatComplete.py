@@ -3,7 +3,7 @@ import pdb
 import traceback
 
 import openai
-from agents.config.openai import API_KEY, BASE_URL, temperature, THU_BASE_URL, THU_API_KEY
+from agents.config.openai import API_KEY, BASE_URL, global_temperature
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -17,8 +17,8 @@ def print_chat_message(messages):
         logging.info(f"{message['role']}: {message['content']}")
 
 
-@retry(wait=wait_random_exponential(min=0.1, max=20), stop=(stop_after_delay(30) | stop_after_attempt(100)))
-def completion_with_backoff(messages, model_type, backend='OpenRouter'):
+# @retry(wait=wait_random_exponential(min=0.1, max=20), stop=(stop_after_delay(30) | stop_after_attempt(100)))
+def completion_with_backoff(messages, model_type, backend='OpenRouter', temperature=0.0):
 
     if model_type in MODEL_CONFIG.keys():
 
@@ -114,7 +114,7 @@ def completion_for_4v(messages, model_type):
     response = openai.chat.completions.create(
         model=model_type,
         messages=messages,
-        temperature=temperature,
+        temperature=global_temperature,
         # max_tokens=2000
     )
 

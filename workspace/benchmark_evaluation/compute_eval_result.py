@@ -1,6 +1,6 @@
 import json
 
-eval_jsonl_file = 'eval_gpt-4o_rubber_duck_on_bench_v3_succint_err_msg.jsonl'
+eval_jsonl_file = 'eval_qwen-2.5-72b-instruct_self_consistency_n-5_on_bench_v3.jsonl'
 ground_truth_jsonl_file = 'bench_final_annotation_v3.jsonl'
 
 

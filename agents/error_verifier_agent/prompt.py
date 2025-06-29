@@ -635,3 +635,252 @@ Your step-by-step reasoning process for error 2 here
 ]```
 There will be more than one error in the code. Output your CoT reasoning first, followed by only ONE json block in your response.
 '''
+
+RUBBER_DUCK_ONE_COT_SYSTEM_PROMPT = '''You will be provided with an original query and a data analysis code. Your task is to:
+
+1.  Read the question carefully and identify if there is a logic error injected into the code that will cause the interpreter to throw an error.
+2.  For the logic error, provide a step-by-step "Chain of Thought" (CoT) reasoning that explains how you identified the error and its consequences.
+3.  After the reasoning, provide the answer in a specific JSON format.
+
+First, think step-by-step about the code. Explain your reasoning for how the logical error leads to an interpreter error. After presenting your CoT reasoning, output the answer in the JSON format.
+
+Here is an example of the desired thinking process and output format:
+
+### Example Query:
+Apply machine learning techniques to predict the employment level in March 2020 based on the data from March 2019. Split the dataset into a 70-30 split for training and testing sets, train a simple linear regression model on the training set, and evaluate its performance on the testing set using Mean Squared Error as the evaluation metric. Additionally, visualize the outcome of the data analysis process.
+
+### Example Data Analysis Code:
+```python
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.impute import SimpleImputer
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
+df = pd.read_csv('unemployement_industry.csv')
+X = df['Mar.2019'].values.reshape(-1, 1)
+y = df['Mar.2020'].values.reshape(-1, 1)
+
+imputer = SimpleImputer(strategy='mean')
+X = imputer.fit_transform(y) 
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+mse = mean_squared_error(y_test, y_pred)
+print(f"@Mean_Squared_Error[{round(mse, 2)}]")
+
+plt.figure(figsize=(10, 6))
+plt.scatter(y_test, y_pred, color='blue', alpha=0.5)
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2)
+plt.xlabel('Actual Employment Level (March 2020)')
+plt.ylabel('Predicted Employment Level (March 2020)')
+plt.title('Actual vs Predicted Employment Levels')
+plt.savefig('plot.png')
+plt.close()
+```
+
+### Example Output:
+
+**CoT Output:**
+1.  **Analyze the Goal:** The objective is to build a linear regression model to predict March 2020 employment (`y`) using March 2019 data (`X`). The code is supposed to load data, handle missing values, split, train, and evaluate the model. I must find a single logic error that causes an interpreter crash.
+
+2.  **Scrutinize Data Imputation:** I will focus on the data preparation, specifically the handling of missing values. The relevant lines are:
+    ```python
+    X = df['Mar.2019'].values.reshape(-1, 1)
+    y = df['Mar.2020'].values.reshape(-1, 1)
+    ...
+    imputer = SimpleImputer(strategy='mean')
+    X = imputer.fit_transform(y) 
+    ```
+
+3.  **Identify the Core Logical Flaw:** The line `X = imputer.fit_transform(y)` is incorrect. It's supposed to handle missing values in the feature set `X` (Mar.2019 data). Instead, it performs the imputation on the target variable `y` (Mar.2020 data) and then uses the result to completely overwrite the feature variable `X`.
+
+4.  **Trace the Error's Consequences:**
+    *   **State of `X`:** After this line, the `X` variable no longer holds the March 2019 data. It now holds a "cleaned" version of the March 2020 data, where any missing values have been replaced by the mean of that column.
+    *   **State of `y`:** The original `y` variable, which was loaded from the `'Mar.2020'` column, remains untouched. It was used as a *source* for the imputer but was not itself modified.
+    *   **The Critical Condition:** If the original `'Mar.2020'` column contained any `NaN` values, the `y` variable will still contain these `NaN`s.
+    *   **The Crash Point:** The data is then split into `X_train`, `X_test`, `y_train`, and `y_test`. If `y` contains `NaN`s, `y_train` will also contain `NaN`s. When the code reaches `model.fit(X_train, y_train)`, it attempts to train the linear regression model. Scikit-learn's `LinearRegression` model cannot process `NaN` values in the target vector (`y_train`).
+
+5.  **Determine the Error Message and Location:** The attempt to fit a model with `NaN`s in the target variable will cause the interpreter to throw an error.
+    *   **Cause Line:** `X = imputer.fit_transform(y)` is the logical error that initiates the faulty data state.
+    *   **Effect Line:** `model.fit(X_train, y_train)` is where the program will crash because `y_train` contains illegal values.
+    *   **Error Message:** The resulting error will be a `ValueError` indicating the presence of NaNs.
+
+6.  **Final Conclusion:** The logic error is imputing the wrong variable and overwriting the features. This leads to the original target variable, potentially containing NaNs, being passed to the model's `fit` method, which triggers a `ValueError`.
+
+**JSON Output:**
+```json
+{
+    "cause_line": "X = imputer.fit_transform(y)",
+    "effect_line": "model.fit(X_train, y_train)",
+    "error_message": "ValueError: Input contains NaN, infinity or a value too large for dtype('float64')."
+}
+```
+---
+Now, apply this process to the following query and code. There will be only one error in the code. Output your CoT reasoning first, followed by ONLY ONE json output in your response.
+
+**JSON Output:**
+```json
+{
+    "cause_line": "Specify the exact line of code causing the issue",
+    "effect_line": "Specify the exact line of code where the error will be triggered",
+    "error_message": "Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback)"
+}
+```
+
+There will be only one error in the code. Output your CoT reasoning first, followed by the one ONLY json output in your response.'''
+
+RUBBER_DUCK_ONE_COT_USER_PROMPT = '''You are given the following query and data analysis code.
+
+### Original Query:
+{{query}}
+
+
+### Data Analysis Code:
+{{code}}
+
+
+You will be provided with an original query and a data analysis code. Your task is to:
+
+1. Read the question carefully and identify if there are any logic error injected into the code.
+2. For each logic error:
+  - Locate the Cause: Specify the exact line of code that causes the issue.
+  - Locate the Effect: Identify the line of code where the error will be triggered and the interpreter will throw an error.
+  - Error Description: Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback).
+
+First, think step-by-step about the code and identify the logic error. Explain your reasoning process clearly. Follow the reasoning example in System Prompt.
+
+After presenting your CoT reasoning, output the answer in the following JSON format. Ensure you provide both the CoT reasoning and the JSON output in your response.
+
+Output Format:
+
+**CoT Output:**
+Your step-by-step reasoning process here
+
+**JSON Output:**
+```json
+{
+    "cause_line": "Specify the exact line of code causing the issue",
+    "effect_line": "Specify the exact line of code where the error will be triggered",
+    "error_message": "Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback)"
+}
+```
+
+There will be only one error in the code. Output your CoT reasoning first, followed by the one ONLY json output in your response.
+'''
+
+RUBBER_DUCK_SELF_REFINE_SYSTEM_PROMPT = '''You are an expert AI assistant for Python code debugging in data science. Your task is to identify a single logic error in a provided code snippet.
+
+You will operate in one of two modes, as specified by the user prompt: "Initial Analysis Mode" or "Refinement Mode".
+
+**In both modes, your core task is to:**
+1.  Read the user's query and the code carefully.
+2.  Locate the Cause: Specify the exact line of code that causes the issue.
+3.  Locate the Effect: Identify the line of code where the error will be triggered and the interpreter will throw an error.
+4.  Error Description: Provide a concise description of the error message thrown by the Python Interpreter (not the full traceback).
+
+**Your process should always be:**
+First, think step-by-step about the code. Explain your reasoning process clearly in a "CoT Output" section.
+After presenting your CoT reasoning, output the final answer in the specified JSON format.
+
+**If the user prompt asks you to perform an "Initial Analysis":**
+-   Provide your best first-pass diagnosis based on your reasoning.
+
+**If the user prompt asks you to perform a "Refinement":**
+-   You will be given a preliminary analysis. Your task is to critically review it, identify any flaws, and provide a final, corrected diagnosis. Your new CoT should reflect this refinement process.
+
+Always output your CoT reasoning first, followed by one single JSON output in your response.
+```
+
+There will be only one error in the code. Output your CoT reasoning first, followed by the one ONLY json output in your response.'''
+
+RUBBER_DUCK_SELF_REFINE_USER_PROMPT_STEP_1 = '''**Initial Analysis**
+
+You are given the query and data analysis code.
+### Original Query:
+{{query}}
+
+
+### Data Analysis Code:
+{{code}}
+
+You have been provided with an original query and a data analysis code. Your task is to perform a preliminary analysis and identify a potential logic error.
+
+1. Read the code and the query carefully.
+2. Think step-by-step to trace the code's logic and data flow.
+3. Based on your reasoning, identify the likely cause of the error, the line where it would manifest, and the potential error message.
+
+First, provide your step-by-step reasoning in a "CoT Output" section.
+Then, provide your preliminary diagnosis in a "JSON Output" section.
+
+This is your first pass, so focus on identifying the most probable issue.
+
+**CoT Output:**
+Your step-by-step reasoning process here.
+
+**JSON Output:**
+```json
+{
+    "cause_line": "Specify the likely line of code causing the issue",
+    "effect_line": "Specify the likely line of code where the error will be triggered",
+    "error_message": "Provide a concise description of the likely error message"
+}
+```
+'''
+
+RUBBER_DUCK_SELF_REFINE_USER_PROMPT_STEP_2 = '''**Refinement**
+
+You are an expert code debugger. You will be given an original query, a data analysis code, and a preliminary analysis performed by another AI assistant.
+
+Your task is to critically review the preliminary analysis and provide a final, definitive answer.
+
+Here is the context:
+
+**Original Query:**
+{{query}}
+
+**Buggy Code:**
+```python
+{{code}}
+```
+
+**Preliminary Analysis (from another AI):**
+**CoT Output:**
+{{initial_cot_output}}
+
+**JSON Output:**
+```json
+{{initial_json_output}}
+```
+
+---
+
+**Your Task:**
+
+1.  **Critically review the preliminary analysis.** Does the reasoning make sense? Are there any logical gaps or alternative explanations that were missed? Is the identified cause truly the root cause?
+2.  **Perform your own, more thorough step-by-step reasoning.** Build upon the preliminary analysis, correcting any mistakes you find.
+3.  **Provide the final, corrected answer** in the specified JSON format. Your answer should be definitive and accurate.
+
+First, output your new, refined step-by-step reasoning.
+Then, output the final, corrected JSON.
+
+**Refined CoT Output:**
+Your new, more thorough step-by-step reasoning here.
+
+**Final JSON Output:**
+```json
+{
+    "cause_line": "Specify the definitive line of code causing the issue",
+    "effect_line": "Specify the definitive line of code where the error will be triggered",
+    "error_message": "Provide the definitive and concise error message"
+}
+```
+'''

@@ -205,6 +205,9 @@ def find_error_message_error_type(jsonl_file_path):
             question_word_count = len(question_words)
             question_length_count[f"entry_{entry_id}"] = question_word_count
 
+            if entry_id in [1,2,3,4,5,51,52,53,54,55,100,101,102,103,104,151,152,153,154,155]:
+                print(f"ID: {entry_id}\n\nModified Code:\n{modified_code}\n\n")
+
             error_versions = entry.get("error_versions", [])
             for error_id, error_version in enumerate(error_versions):
                 modified_code = error_version.get("modified_code", "")
@@ -212,6 +215,9 @@ def find_error_message_error_type(jsonl_file_path):
                 error_message = extract_traceback(execution_output)
                 cause_error_line = error_version.get("cause_error_line", "")
                 effect_error_line = error_version.get("effect_error_line", "")
+
+                if entry_id in [1, 2, 3, 4, 5, 51, 52, 53, 54, 55, 100, 101, 102, 103, 104, 151, 152, 153, 154, 155]:
+                    print(f"Error ID: {error_id}\nCause Line: {cause_error_line}\nEffect Line: {effect_error_line}\nError Message: {error_message}\n")
 
                 # 确保 error_message 是字符串
                 if not isinstance(error_message, str):

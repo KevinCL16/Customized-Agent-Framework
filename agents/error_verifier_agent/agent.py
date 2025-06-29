@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import traceback
+from collections import Counter
 
 from tenacity import RetryError
 from tqdm import tqdm
@@ -108,7 +109,39 @@ class ErrorVerifierAgent(GenericAgent):
         self.query = kwargs.get('query', '')
         self.data_information = kwargs.get('data_information', None)
 
-    def generate(self, user_prompt, model_type, code, backend='OpenRouter'):
+    def _get_self_consistent_answer(self, list_of_parsed_json):
+        """
+        Performs a majority vote to find the most consistent answer.
+        Votes are cast based on the (cause_line, effect_line) tuple.
+        """
+        if not list_of_parsed_json:
+            return None
+
+        votes = []
+        for output in list_of_parsed_json:
+            # 确保每个输出都是有效的字典
+            if isinstance(output, dict) and 'cause_line' in output and 'effect_line' in output:
+                # 标准化处理，避免因空格等问题导致投票分散
+                cause = str(output['cause_line']).strip()
+                effect = str(output['effect_line']).strip()
+                votes.append((cause, effect))
+
+        if not votes:
+            return None
+
+        vote_counts = Counter(votes)
+        most_common_answer_tuple, _ = vote_counts.most_common(1)[0]
+
+        # 找到与最常见答案匹配的第一个完整JSON对象
+        for output in list_of_parsed_json:
+            if isinstance(output, dict) and 'cause_line' in output and 'effect_line' in output:
+                if (str(output['cause_line']).strip() == most_common_answer_tuple[0] and
+                        str(output['effect_line']).strip() == most_common_answer_tuple[1]):
+                    return output  # 返回完整的JSON对象
+
+        return None  # 理论上不应该到这里，但作为保障
+
+    def generate(self, user_prompt, model_type, code, backend='OpenRouter', temperature=0.0):
         workspace_structure = print_filesys_struture(self.workspace)
 
         information = {
@@ -122,6 +155,50 @@ class ErrorVerifierAgent(GenericAgent):
         messages.append({"role": "user", "content": fill_in_placeholders(self.prompts['user'], information)})
 
         self.chat_history = self.chat_history + messages
+        return completion_with_backoff(messages, model_type, backend, temperature)
+
+    def generate_for_self_refine(self, user_prompt, model_type, code, initial_analysis=None, backend='OpenRouter'):
+        workspace_structure = print_filesys_struture(self.workspace)
+
+        # ------------------ 1. 准备通用的信息 ------------------
+        # 这些信息在两个阶段都是共享的
+        base_information = {
+            # 'workspace_structure': workspace_structure,
+            'code': code,
+            'query': user_prompt,
+        }
+
+        # ------------------ 2. 准备 System Prompt ------------------
+        # 两个阶段使用同一个 System Prompt
+        system_prompt = fill_in_placeholders(self.prompts['system'], base_information)
+
+        messages = []
+        messages.append({"role": "system", "content": system_prompt})
+
+        # ------------------ 3. 根据阶段选择并准备 User Prompt ------------------
+        if initial_analysis:
+            # --- 第二阶段：Refinement Mode ---
+            # 除了基本信息，还需要第一阶段的诊断结果
+            refinement_information = {
+                **base_information,  # 合并字典，继承所有基本信息
+                'initial_cot_output': initial_analysis['cot_output'],
+                'initial_json_output': json.dumps(initial_analysis['json_output'], indent=4)
+            }
+
+            user_prompt_content = fill_in_placeholders(self.prompts['user_stage_2'], refinement_information)
+
+        else:
+            # --- 第一阶段：Initial Analysis Mode ---
+            # 只需要基本信息
+            user_prompt_content = fill_in_placeholders(self.prompts['user_stage_1'], base_information)
+
+        messages.append({"role": "user", "content": user_prompt_content})
+
+        # ------------------ 4. 调用API并返回结果 ------------------
+        # 这里的 chat_history 逻辑可以根据你的需求调整
+        # 如果每个阶段是独立的，就不需要累加
+        # self.chat_history = self.chat_history + messages
+
         return completion_with_backoff(messages, model_type, backend)
 
     def run(self, queries, model_type, code):
@@ -411,7 +488,7 @@ class ErrorVerifierAgent(GenericAgent):
                             print(
                                 f"\n...............Verifying error version {idx + 1}/{len(error_versions)} (Attempt {retries + 1})...............")
 
-                            result = self.generate(prompt, model_type=model_type, code=modified_code, backend='THU')
+                            result = self.generate(prompt, model_type=model_type, code=modified_code, backend='OpenRouter')
 
                             # Locate the first curly brace to the last one for extracting the JSON object
                             start_index = result.rfind('{')
@@ -437,7 +514,7 @@ class ErrorVerifierAgent(GenericAgent):
 
                             print(
                                 f"\n...............Evaluating error version {idx + 1}/{len(error_versions)} (Attempt {retries + 1})...............")
-                            eval_completion = completion_with_backoff(messages, 'gpt-4o', backend='THU')
+                            eval_completion = completion_with_backoff(messages, 'gpt-4o', backend='OpenRouter')
 
                             start_index = eval_completion.rfind('{')
                             end_index = eval_completion.rfind('}')
@@ -474,7 +551,7 @@ class ErrorVerifierAgent(GenericAgent):
 
         finally:
             # Save all results to a file
-            with open(os.path.join(eval_folder, f'eval_{model_type.replace("deepseek/", "").replace(":", "_")}_rubber_duck_case_study_on_bench_v3.jsonl'), 'a') as jsonl_file:
+            with open(os.path.join(eval_folder, f'eval_{model_type.replace("qwen/", "").replace(":", "_")}_rubber_duck_1_shot_CoT_on_bench_v3.jsonl'), 'a') as jsonl_file:
                 eval_result_dict = {
                     'id': query['id'],
                     'eval_result': eval_results
@@ -605,6 +682,315 @@ class ErrorVerifierAgent(GenericAgent):
                 eval_result_dict = {
                     'id': query['id'],
                     'eval_result': eval_results  # Now contains list of lists of single-error evaluations
+                }
+                jsonl_file.write(json.dumps(eval_result_dict) + '\n')
+
+        log_string = "\n".join(log)
+        return log_string, eval_results
+
+    def rubber_duck_eval_self_refine(self, queries, model_type, eval_folder, individual_workspace):
+        """
+        Modified version of rubber_duck_eval to implement a two-stage self-refine process.
+        """
+        log = []
+        query = queries
+
+        error_versions = query.get('error_versions')
+        if not error_versions:
+            raise ValueError("No error versions found in the query.")
+
+        # 记录日志
+        log.append(
+            f"\n------------------------------------- Processing Query (Self-Refine) -------------------------------------")
+        log.append(f"Question ID: {query['id']}")
+        log.append(f"Question: {query['question']}")
+
+        base_prompt = f"""Question ID: {query['id']}
+    Question: {query['question']}"""
+
+        MAX_RETRIES = 5
+        eval_results = []
+        print(f"\n**********Verifying ID: {query['id']} (Self-Refine)**********")
+        try:
+            for idx, error_version in enumerate(error_versions):
+                retries = 0
+                success = False
+
+                while retries < MAX_RETRIES and not success:
+                    try:
+                        log.append(
+                            f"\n--- Processing Error Version {idx + 1}/{len(error_versions)} (Attempt {retries + 1}) ---")
+
+                        modified_code = error_version['modified_code']
+                        error_message = extract_traceback(error_version.get('execution_output', ''))
+
+                        if error_message is None:
+                            log.append("Skipping error version due to missing execution output.")
+                            break
+
+                        ground_truth = {
+                            "cause_error_line": error_version["cause_error_line"],
+                            "effect_error_line": error_version["effect_error_line"],
+                            "execution_output": error_message
+                        }
+
+                        log.append(f"\nModified Code:\n{modified_code}")
+                        log.append(f"Ground Truth: {json.dumps(ground_truth, indent=2)}")
+
+                        # ------------------ STAGE 1: Initial Diagnosis ------------------
+                        log.append("\n............... STAGE 1: Performing Initial Diagnosis ...............")
+                        print(
+                            f"\n............... STAGE 1: Verifying error version {idx + 1}/{len(error_versions)} ...............")
+
+                        # 调用LLM进行初步诊断
+                        initial_result_raw = self.generate_for_self_refine(base_prompt, model_type=model_type, code=modified_code,
+                                                           backend='OpenRouter')
+
+                        # 提取初步诊断的CoT和JSON
+                        # 注意：这里需要一个更健壮的解析器，但为了简单起见，我们先用字符串分割
+                        if "**JSON Output:**" not in initial_result_raw:
+                            raise ValueError("Initial diagnosis response is malformed: missing 'JSON Output'.")
+
+                        parts = initial_result_raw.split("**JSON Output:**")
+                        initial_cot_output = parts[0].replace("**CoT Output:**", "").strip()
+                        json_part_raw = parts[1]
+
+                        start_index = json_part_raw.find('{')
+                        end_index = json_part_raw.rfind('}')
+                        if start_index == -1 or end_index == -1:
+                            raise ValueError("No valid JSON found in the initial LLM response.")
+
+                        initial_json_str = json_part_raw[start_index:end_index + 1]
+                        initial_llm_output = json.loads(initial_json_str)
+
+                        log.append(f"\n[STAGE 1] Initial CoT Output:\n{initial_cot_output}")
+                        log.append(f"[STAGE 1] Initial JSON Output: {json.dumps(initial_llm_output, indent=2)}")
+
+                        # ------------------ STAGE 2: Refinement ------------------
+                        log.append("\n............... STAGE 2: Performing Refinement ...............")
+                        print(
+                            f"\n............... STAGE 2: Refining diagnosis for error version {idx + 1}/{len(error_versions)} ...............")
+
+                        # 构建第二阶段的输入
+                        initial_analysis = {
+                            "cot_output": initial_cot_output,
+                            "json_output": initial_llm_output
+                        }
+
+                        print(f"\nInitial analysis: \n{initial_analysis}")
+
+                        # 再次调用LLM进行修正
+                        final_result_raw = self.generate_for_self_refine(
+                            base_prompt,
+                            model_type=model_type,
+                            code=modified_code,
+                            initial_analysis=initial_analysis,  # 传入第一阶段的结果
+                            backend='OpenRouter'
+                        )
+
+                        # 提取最终的诊断结果
+                        if "**Final JSON Output:**" not in final_result_raw:
+                            raise ValueError("Refined response is malformed: missing 'Final JSON Output'.")
+
+                        print(f"\nFinal Analysis: \n{final_result_raw}")
+
+                        final_parts = final_result_raw.split("**Final JSON Output:**")
+                        refined_cot_output = final_parts[0].replace("**Refined CoT Output:**", "").strip()
+                        final_json_part_raw = final_parts[1]
+
+                        start_index = final_json_part_raw.find('{')
+                        end_index = final_json_part_raw.rfind('}')
+                        if start_index == -1 or end_index == -1:
+                            raise ValueError("No valid JSON found in the final LLM response.")
+
+                        final_json_str = final_json_part_raw[start_index:end_index + 1]
+                        final_llm_output = json.loads(final_json_str)
+
+                        # ------------------ EVALUATION ------------------
+                        # 使用最终结果进行评估
+                        information = {
+                            'ground_truth': ground_truth,
+                            'eval_dict': final_llm_output  # 使用最终的输出进行评估
+                        }
+
+                        messages = [
+                            {"role": "system", "content": ''},  # 你的评估System Prompt
+                            {"role": "user", "content": fill_in_placeholders(self.prompts['eval'], information)}
+                        ]
+
+                        print(f"\n............... Evaluating final refined output ...............")
+                        eval_completion = completion_with_backoff(messages, 'gpt-4o', backend='OpenRouter')
+
+                        start_index = eval_completion.rfind('{')
+                        end_index = eval_completion.rfind('}')
+                        json_str = eval_completion[start_index:end_index + 1]
+                        eval_result = json.loads(json_str)
+                        eval_results.append(eval_result)
+
+                        # 记录最终日志
+                        log.append(f"\n[STAGE 2] Refined CoT Output:\n{refined_cot_output}")
+                        log.append(f"[STAGE 2] Final LLM Output (for eval): {json.dumps(final_llm_output, indent=2)}")
+                        print(f"Final LLM Output: {json.dumps(final_llm_output, indent=2)}")
+                        log.append(f"Eval Result: {eval_result}")
+
+                        success = True
+
+                    except (ValueError, json.JSONDecodeError, KeyError, TypeError, RetryError) as e:
+                        retries += 1
+                        log.append(f"Error encountered in Attempt {retries}: {str(e)}")
+                        print(f"Error in Attempt {retries}: {str(e)}")
+
+                if not success:
+                    log.append(f"Failed to process Error Version {idx + 1} after {MAX_RETRIES} attempts.")
+                    print(f"Failed to process Error Version {idx + 1} after {MAX_RETRIES} attempts.")
+
+        except (ValueError, json.JSONDecodeError, KeyError) as e:
+            print(f"Exception occurred during processing of query {query['id']}: {str(e)}")
+
+        finally:
+            # 文件名中加入 "self_refine" 标识
+            output_filename = os.path.join(eval_folder,
+                                           f'eval_{model_type.replace("qwen/", "").replace(":", "_")}_rubber_duck_self_refine_on_bench_v3.jsonl')
+            with open(output_filename, 'a') as jsonl_file:
+                eval_result_dict = {
+                    'id': query['id'],
+                    'eval_result': eval_results
+                }
+                jsonl_file.write(json.dumps(eval_result_dict) + '\n')
+
+        log_string = "\n".join(log)
+        return log_string, eval_results
+
+    def rubber_duck_eval_self_consistency(self, queries, model_type, eval_folder, individual_workspace, n_samples=5,
+                                          temperature=0.7):
+        """
+        Modified version of rubber_duck_eval for Self-Consistency.
+        It generates multiple responses and uses a majority vote to determine the final answer.
+        """
+        log = []
+        query = queries
+
+        error_versions = query.get('error_versions')
+        if not error_versions:
+            raise ValueError("No error versions found in the query.")
+
+        log.append(
+            f"\n------------------------------------- Processing Query (Self-Consistency) -------------------------------------")
+        log.append(f"Question ID: {query['id']}")
+        log.append(f"Question: {query['question']}")
+
+        prompt = f"""Question ID: {query['id']}
+    Question: {query['question']}"""
+
+        MAX_RETRIES = 5  # 这是针对每个样本的重试次数
+        eval_results = []
+        print(f"\n**********Verifying ID: {query['id']} (Self-Consistency, n={n_samples})**********")
+
+        try:
+            for idx, error_version in tqdm(enumerate(error_versions)):
+                log.append(f"\n--- Processing Error Version {idx + 1}/{len(error_versions)} ---")
+
+                modified_code = error_version['modified_code']
+                error_message = extract_traceback(error_version.get('execution_output', ''))
+
+                if error_message is None:
+                    log.append("Skipping error version due to missing execution output.")
+                    break
+
+                ground_truth = {
+                    "cause_error_line": error_version["cause_error_line"],
+                    "effect_error_line": error_version["effect_error_line"],
+                    "execution_output": error_message
+                }
+
+                log.append(f"\nModified Code:\n{modified_code}")
+                log.append(f"Ground Truth: {json.dumps(ground_truth, indent=2)}")
+
+                # ------------------ SAMPLING STAGE ------------------
+                all_sample_outputs = []
+                log.append(f"\n............... Generating {n_samples} samples ...............")
+                print(f"\n............... Generating {n_samples} samples for error version {idx + 1}/{len(error_versions)} ...............")
+
+                for i in range(n_samples):
+                    retries = 0
+                    sample_success = False
+                    while retries < MAX_RETRIES and not sample_success:
+                        try:
+                            # 假设 self.generate 支持 temperature 参数
+                            # 如果不支持，需要在 self.generate 内部传递给 completion_with_backoff
+                            result = self.generate(prompt, model_type=model_type, code=modified_code,
+                                                   backend='OpenRouter', temperature=temperature)
+
+                            start_index = result.rfind('{')
+                            end_index = result.rfind('}')
+                            if start_index == -1 or end_index == -1:
+                                raise ValueError("No valid JSON found in the LLM sample response.")
+
+                            json_str = result[start_index:end_index + 1]
+                            llm_output = json.loads(json_str)
+
+                            all_sample_outputs.append(llm_output)
+                            log.append(
+                                f"--- Sample {i + 1}/{n_samples} successful. JSON: {json.dumps(llm_output, indent=2)}")
+                            sample_success = True
+
+                        except (ValueError, json.JSONDecodeError, KeyError, TypeError, RetryError) as e:
+                            retries += 1
+                            log.append(f"Error encountered in Sample {i + 1} Attempt {retries}: {str(e)}")
+                            print(f"Error in Sample {i + 1} Attempt {retries}: {str(e)}")
+
+                    if not sample_success:
+                        log.append(
+                            f"Failed to generate Sample {i + 1} after {MAX_RETRIES} attempts. Skipping this sample.")
+
+                # ------------------ VOTING STAGE ------------------
+                if not all_sample_outputs:
+                    log.append("No successful samples were generated. Skipping evaluation for this error version.")
+                    print("No successful samples were generated. Skipping evaluation.")
+                    continue
+
+                log.append(f"\n............... Performing Majority Vote ...............")
+                final_llm_output = self._get_self_consistent_answer(all_sample_outputs)
+
+                if final_llm_output is None:
+                    log.append("Voting resulted in no clear winner or failed. Using the first sample as fallback.")
+                    print("Voting failed. Using first sample as fallback.")
+                    final_llm_output = all_sample_outputs[0]  # 回退策略
+
+                log.append(f"Final Voted Output (for eval): {json.dumps(final_llm_output, indent=2)}")
+                print(f"Final Voted Output: {json.dumps(final_llm_output, indent=2)}")
+
+                # ------------------ EVALUATION ------------------
+                information = {
+                    'ground_truth': ground_truth,
+                    'eval_dict': final_llm_output
+                }
+
+                messages = [
+                    {"role": "system", "content": ''},  # 你的评估System Prompt
+                    {"role": "user", "content": fill_in_placeholders(self.prompts['eval'], information)}
+                ]
+
+                print(f"\n............... Evaluating final voted output ...............")
+                eval_completion = completion_with_backoff(messages, 'gpt-4o', backend='OpenRouter')
+
+                start_index = eval_completion.rfind('{')
+                end_index = eval_completion.rfind('}')
+                json_str = eval_completion[start_index:end_index + 1]
+                eval_result = json.loads(json_str)
+                eval_results.append(eval_result)
+                log.append(f"Eval Result: {eval_result}")
+
+        except Exception as e:
+            print(f"An unexpected error occurred during processing of query {query['id']}: {str(e)}")
+
+        finally:
+            output_filename = os.path.join(eval_folder,
+                                           f'eval_{model_type.replace("qwen/", "_").replace(":", "_")}_self_consistency_n-{n_samples}_on_bench_v3.jsonl')
+            with open(output_filename, 'a') as jsonl_file:
+                eval_result_dict = {
+                    'id': query['id'],
+                    'eval_result': eval_results
                 }
                 jsonl_file.write(json.dumps(eval_result_dict) + '\n')
 

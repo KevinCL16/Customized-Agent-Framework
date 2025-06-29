@@ -78,7 +78,7 @@ class AgentEnvironment:
         workspace_list = []
         for instruction in self.instructions:
             d_id = instruction['id']
-            individual_directory = os.path.join(self.workspace, f'example {d_id}')
+            individual_directory = os.path.join(self.workspace, f'example_{d_id}')
             os.makedirs(individual_directory, exist_ok=True)
             workspace_list.append(individual_directory)
 
@@ -104,7 +104,7 @@ class AgentEnvironment:
                 return f"Error executing {file_name}: {str(e)}"
 
     def log_action(self, action, agent_name, model_type, code, log, individual_workspace):
-        model_type = model_type.replace("Qwen/", "").replace("deepseek/", "").replace("google/", "").replace(":", "_")
+        model_type = model_type.replace("qwen/", "").replace("openai/", "").replace("deepseek/", "").replace(":", "_")
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         log_entry = f"""
 {'=' * 80}
@@ -373,7 +373,7 @@ LOG OUTPUT:
             try:
                 results = {}
                 # Create individual workspace for this instruction
-                individual_workspace = os.path.join(self.workspace, f'example {instruction["id"]}')
+                individual_workspace = os.path.join(self.workspace, f'example_{instruction["id"]}')
                 os.makedirs(individual_workspace, exist_ok=True)
                 
                 # Copy data file if needed

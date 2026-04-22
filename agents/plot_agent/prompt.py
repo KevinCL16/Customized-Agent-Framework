@@ -13,13 +13,15 @@ When you complete a plot, remember to save it to a png file. The file name shoul
 Use Agg backend for non-GUI rendering: matplotlib.use('Agg'). Declare that the file uses UTF-8 encoding by using "# -*- coding: utf-8 -*-" at the start of code.""".
 '''
 
-VIS_SYSTEM_PROMPT = '''You are a cutting-edge super capable code generation LLM. You will be given a piece of code and natural language instruction on how to improve it. Base on the given code, generate a runnable python code to satisfy all the requirements in the instruction while retaining the original code's functionality. You can use any python library you want. When you complete a plot, remember to save it to a png file.
+VIS_SYSTEM_PROMPT = '''You are a cutting-edge super capable code generation LLM. You will be given structured refinement context containing the original user query, planning context, the current plotting code, and CapImagine-style visual reasoning feedback. Generate runnable python code that fixes the plot while preserving correct existing behavior. You can use any python library you want. When you complete a plot, remember to save it to a png file.
 '''
 
 VIS_USER_PROMPT = '''Here is the code and instruction:
 """
 {{query}}
 """
+Treat the content above as structured context. Use the original user query as the source of truth, use the current code as the base to revise, and apply the visual reasoning feedback to repair the plot.
+
 When you complete a plot, remember to save it to a png file. The file name should be """{{file_name}}""".
 
 Use Agg backend for non-GUI rendering: matplotlib.use('Agg'). Declare that the file uses UTF-8 encoding by using "# -*- coding: utf-8 -*-" at the start of code.

@@ -1,14 +1,15 @@
-import json
-import re
-
 from tqdm import tqdm
-from agents.query_expansion_agent import QueryExpansionAgent
 from agents.plot_agent import PlotAgent
-from agents.visual_refine_agent import VisualRefineAgent
 import logging
 import os
 from agents.utils import is_run_code_success, run_code, get_code
 import argparse
+from matplotbench_runtime import (
+    copy_benchmark_inputs,
+    ensure_example_workspace,
+    filter_benchmark_items,
+    load_benchmark_instructions,
+)
 
 
 def mainworkflow(expert_instruction, simple_instruction, workspace='./workspace',model_type='gpt-3.5-turbo',no_sysprompt=False):
@@ -17,7 +18,7 @@ def mainworkflow(expert_instruction, simple_instruction, workspace='./workspace'
     config = {'workspace': workspace}
     # GPT-3.5-turbo Plot Agent
     # Initial plotting
-    action_agent = PlotAgent(config, simple_instruction)
+    action_agent = PlotAgent(config, query=simple_instruction)
     logging.info('=========Plotting=========')
     novice_35_log, novice_35_code = action_agent.run_one_time_zero_shot_COT(model_type, 'novice.png',no_sysprompt=no_sysprompt)
     logging.info(novice_35_log)
@@ -38,33 +39,41 @@ def check_refined_code_executable(refined_code, model_type, query_type, workspac
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--workspace', type=str, default='./workspace')
-    parser.add_argument('--model_type', type=str, default='gpt-3.5-turbo')
+    parser.add_argument('--model_type', type=str, default='google/gemini-3-flash-preview')
     parser.add_argument('--no_sysprompt',action='store_true')
+    parser.add_argument('--benchmark_dir', type=str, default=None)
+    parser.add_argument('--start_id', type=int, default=None)
+    parser.add_argument('--end_id', type=int, default=None)
+    parser.add_argument('--data_ids', nargs='*', type=int, default=None)
     args = parser.parse_args()
 
     workspace_base = args.workspace
-    data_path = '/home/zhoupeng/project/LLM/agent/plotagent/benchmark/newPlotAgent/plot-agent/benchmark_data/'
-    # open the json file 
-    data = json.load(open(f'{data_path}/benchmark_instructions.json'))
+    data = load_benchmark_instructions(args.benchmark_dir)
+    data = filter_benchmark_items(
+        data,
+        start_id=args.start_id,
+        end_id=args.end_id,
+        data_ids=args.data_ids,
+    )
     
     for item in tqdm(data):
         novice_instruction = item['simple_instruction']
         expert_instruction = item['expert_instruction']
         example_id = item['id']
-        directory_path = f'{workspace_base}/example_{example_id}'
+        directory_path = ensure_example_workspace(workspace_base, example_id)
+        copy_benchmark_inputs(args.benchmark_dir, example_id, directory_path)
 
-        # Check if the directory already exists
-        if not os.path.exists(directory_path):
-            # If it doesn't exist, create the directory
-            os.mkdir(directory_path)
-            print(f"Directory '{directory_path}' created successfully.")
-            input_path = f'{data_path}/data/{example_id}'
-            if os.path.exists(input_path):
-                #全部copy到f"Directory '{directory_path}'
-                os.system(f'cp -r {input_path}/* {directory_path}')
-        else:
-            print(f"Directory '{directory_path}' already exists.")
-            continue
-
-        logging.basicConfig(level=logging.INFO, filename=f'{directory_path}/workflow.log', filemode='w', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        mainworkflow(expert_instruction,novice_instruction, workspace=directory_path,model_type=args.model_type,no_sysprompt=args.no_sysprompt)
+        logging.basicConfig(
+            level=logging.INFO,
+            filename=os.path.join(directory_path, 'workflow.log'),
+            filemode='w',
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            force=True,
+        )
+        mainworkflow(
+            expert_instruction,
+            novice_instruction,
+            workspace=str(directory_path),
+            model_type=args.model_type,
+            no_sysprompt=args.no_sysprompt,
+        )

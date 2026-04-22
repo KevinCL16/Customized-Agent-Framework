@@ -1,16 +1,27 @@
+import argparse
 import base64
-import json
 import logging
 import os
-import re
-import shutil
-import glob
 import sys
-sys.path.insert(0, sys.path[0]+"/../")
-from agents.utils import is_run_code_success
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from agents.plot_agent import PlotAgent
 from openai import OpenAI
-from agents.config.openai import API_KEY, BASE_URL, temperature
+from agents.config.openai import API_KEY, BASE_URL
+from matplotbench_runtime import (
+    copy_benchmark_inputs,
+    ensure_example_workspace,
+    load_benchmark_instructions,
+    resolve_benchmark_dir,
+)
+
+
+def sanitize_label(value):
+    return value.replace("/", "_").replace(":", "_").replace(".", "_").replace("-", "_")
 
 
 def encode_image(image_path):
@@ -18,7 +29,26 @@ def encode_image(image_path):
         return base64.b64encode(image_file.read()).decode('utf-8')
 
 
-def gpt_4_evaluate(code, query, image):
+def resolve_eval_images(ground_truth, image, rollback, benchmark_dir):
+    benchmark_dir = resolve_benchmark_dir(benchmark_dir)
+    ground_truth_dir = benchmark_dir / "ground_truth"
+
+    if not os.path.exists(f'{image}'):
+        if os.path.exists(f'{rollback}'):
+            reference_path = str(ground_truth_dir / ground_truth)
+            generated_path = f"{rollback}"
+        else:
+            empty_path = str(ground_truth_dir / 'empty.png')
+            reference_path = empty_path
+            generated_path = empty_path
+    else:
+        reference_path = str(ground_truth_dir / ground_truth)
+        generated_path = f"{image}"
+
+    return benchmark_dir, reference_path, generated_path
+
+
+def gpt_4_evaluate(code, query, image, eval_model):
     if not os.path.exists(f'{image}'):
         executable = 'False'
     else:
@@ -29,7 +59,7 @@ def gpt_4_evaluate(code, query, image):
         base_url=BASE_URL, )
 
     response = client.chat.completions.create(
-        model="gpt-4",
+        model=eval_model,
         temperature=0.2,
         messages=[
             {
@@ -66,24 +96,22 @@ For example [FINAL SCORE]: 40. A final score must be generated.''',
     return response.choices[0].message
 
 
-def gpt_4v_evaluate(ground_truth, image, rollback):
+def gpt_4v_evaluate(ground_truth, image, rollback, benchmark_dir, eval_model):
+    benchmark_dir, reference_path, generated_path = resolve_eval_images(
+        ground_truth,
+        image,
+        rollback,
+        benchmark_dir,
+    )
+
     client = OpenAI(
         api_key=API_KEY,
         base_url=BASE_URL,)
-    if not os.path.exists(f'{image}'):
-        if os.path.exists(f'{rollback}'):
-            base64_image1 = encode_image(f"./benchmark_data/ground_truth/{ground_truth}")
-            base64_image2 = encode_image(f"{rollback}")
-        else:
-            image = './benchmark_data/ground_truth/empty.png'
-            base64_image1 = encode_image(f"{image}")
-            base64_image2 = encode_image(f"{image}")
-    else:
-        base64_image1 = encode_image(f"./benchmark_data/ground_truth/{ground_truth}")
-        base64_image2 = encode_image(f"{image}")
+    base64_image1 = encode_image(reference_path)
+    base64_image2 = encode_image(generated_path)
 
     response = client.chat.completions.create(
-      model="gpt-4-vision-preview",
+      model=eval_model,
       temperature=0.2,
       messages=[
         {
@@ -126,52 +154,132 @@ def gpt_4v_evaluate(ground_truth, image, rollback):
     return response.choices[0].message
 
 
-def mainworkflow(test_sample_id, workspace, direct_eval=False):
-    directory = f'{workspace}/example_{test_sample_id}'
+def rubric_vlm_evaluate(query, ground_truth, image, rollback, benchmark_dir, eval_model):
+    _, reference_path, generated_path = resolve_eval_images(
+        ground_truth,
+        image,
+        rollback,
+        benchmark_dir,
+    )
 
-    if not os.path.exists(directory):
+    client = OpenAI(
+        api_key=API_KEY,
+        base_url=BASE_URL,
+    )
+    base64_reference = encode_image(reference_path)
+    base64_generated = encode_image(generated_path)
 
-        os.mkdir(directory)
-        print(f"Directory '{directory}' created successfully.")
-    else:
-        print(f"Directory '{directory}' already exists.")
+    response = client.chat.completions.create(
+      model=eval_model,
+      temperature=0.2,
+      messages=[
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": f'''You are an expert judge for query-conditioned visualization generation.
 
-    logging.basicConfig(level=logging.INFO, filename=f'{directory}/eval_4v_rollback.log', filemode='w',
-                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    config = {'workspace': directory}
+Evaluate the first figure against both the user query and the second figure (ground-truth reference).
 
-    with open('benchmark_data/benchmark_instructions.json') as file:
-        data = json.load(file)
+User query:
+"""
+{query}
+"""
+
+Scoring rubric:
+1. Task Compliance (0-100)
+- Does the generated figure satisfy the chart type, hierarchy, layout, required text, and required visual elements in the query?
+
+2. Structural Match (0-100)
+- Does the generated figure match the reference in subplot count, topology, global layout, hierarchy depth, and major geometry?
+
+3. Visual Encoding Match (0-100)
+- Does the generated figure match the reference in colors, legends, axes/scales, projections, markers, fills, and highlighted regions when relevant?
+
+4. Readability (0-100)
+- Is the figure legible and well presented, without severe overlap, clutter, or broken layout?
+
+Important rules:
+- If the generated figure is blank or effectively missing the main chart content, scores should be near 0.
+- If the figure differs from the reference in nonessential styling but clearly satisfies the query structure, do not over-penalize it.
+- If the task is stochastic, prioritize semantic correctness and chart structure over exact pixel resemblance.
+
+After a short explanation, output EXACTLY these lines:
+[TASK COMPLIANCE]: <0-100>
+[STRUCTURAL MATCH]: <0-100>
+[VISUAL ENCODING]: <0-100>
+[READABILITY]: <0-100>
+[RUBRIC SCORE]: <0-100>
+
+Use this weighted formula:
+RUBRIC SCORE = 0.4 * Task Compliance + 0.3 * Structural Match + 0.2 * Visual Encoding Match + 0.1 * Readability
+''',
+            },
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": f"data:image/jpeg;base64,{base64_generated}",
+              },
+            },
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": f"data:image/jpeg;base64,{base64_reference}",
+              },
+            },
+          ],
+        }
+      ],
+      max_tokens=1200,
+    )
+    return response.choices[0].message
+
+
+def mainworkflow(
+    test_sample_id,
+    workspace,
+    benchmark_dir=None,
+    direct_eval=False,
+    eval_model='gpt-5.4',
+    generated_model_name='google/gemini-3-flash-preview',
+    run_rubric_eval=False,
+    skip_legacy_eval=False,
+):
+    benchmark_dir = resolve_benchmark_dir(benchmark_dir)
+    directory = ensure_example_workspace(workspace, test_sample_id)
+    eval_log_name = f"eval_{sanitize_label(generated_model_name)}_by_{sanitize_label(eval_model)}.log"
+    rubric_log_name = f"eval_rubric_{sanitize_label(generated_model_name)}_by_{sanitize_label(eval_model)}.log"
+    initial_log_name = rubric_log_name if skip_legacy_eval and run_rubric_eval else eval_log_name
+
+    logging.basicConfig(
+        level=logging.INFO,
+        filename=os.path.join(directory, initial_log_name),
+        filemode='w',
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        force=True,
+    )
+    config = {'workspace': str(directory)}
+
+    data = load_benchmark_instructions(benchmark_dir)
     simple_instruction = data[test_sample_id - 1]["simple_instruction"]
     expert_instruction = data[test_sample_id - 1]["expert_instruction"]
 
     if direct_eval:
         pass
     else:
-        if test_sample_id in range(76, 101):
-            # Define the source and destination directories
-            source_dir = f'./benchmark_data/data/{test_sample_id}'
-            destination_dir = directory
-            # Create a list of all CSV files in the source directory
-            csv_files = glob.glob(os.path.join(source_dir, '*.csv'))
-
-            # Copy each CSV file to the destination directory
-            for file in csv_files:
-                # Extract the filename from the path
-                filename = os.path.basename(file)
-                # Copy the file
-                shutil.copy(file, os.path.join(destination_dir, filename))
+        copy_benchmark_inputs(benchmark_dir, test_sample_id, directory)
 
         logging.info('=========Plotting=========')
 
-        action_agent = PlotAgent(config, expert_instruction, simple_instruction)
+        action_agent = PlotAgent(config, query=simple_instruction)
         logging.info('=========Novice 4 Plotting=========')
-        logging.info(action_agent.run_novice('gpt-4', 'novice_4.png'))
-        action_agent = PlotAgent(config, expert_instruction, simple_instruction)
+        logging.info(action_agent.run_initial('gpt-4', 'novice_4.png'))
+        action_agent = PlotAgent(config, query=simple_instruction)
         logging.info('=========Novice 3.5 Plotting=========')
-        logging.info(action_agent.run_novice('gpt-3.5-turbo', 'novice_35.png'))
+        logging.info(action_agent.run_initial('gpt-3.5-turbo', 'novice_35.png'))
 
-    for model_type in ['model_name']:
+    for model_type in [generated_model_name]:
         for query_type in ['novice']:
             print(f'=========Evaluating {model_type} {query_type}=========')
             ground_truth = f"example_{test_sample_id}.png"
@@ -183,14 +291,51 @@ def mainworkflow(test_sample_id, workspace, direct_eval=False):
 
 
 
-            plot_result = gpt_4v_evaluate(ground_truth, image, image_rollback)
-            logging.info(plot_result)
+            if not skip_legacy_eval:
+                plot_result = gpt_4v_evaluate(ground_truth, image, image_rollback, benchmark_dir, eval_model)
+                logging.info(plot_result)
+
+            if run_rubric_eval:
+                logging.basicConfig(
+                    level=logging.INFO,
+                    filename=os.path.join(directory, rubric_log_name),
+                    filemode='w',
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    force=True,
+                )
+                logging.info(f'=========Rubric Evaluating {model_type} {query_type}=========')
+                rubric_result = rubric_vlm_evaluate(
+                    query=query,
+                    ground_truth=ground_truth,
+                    image=image,
+                    rollback=image_rollback,
+                    benchmark_dir=benchmark_dir,
+                    eval_model=eval_model,
+                )
+                logging.info(rubric_result)
 
 
 
 
 if __name__ == "__main__":
-    # Get the number passed as an argument
-    idx = int(sys.argv[1])
-    directory_path = f'./your_workspace'
-    mainworkflow(idx, workspace=directory_path, direct_eval=True)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('idx', type=int)
+    parser.add_argument('--workspace', type=str, default='./workspace')
+    parser.add_argument('--benchmark_dir', type=str, default=None)
+    parser.add_argument('--direct_eval', action='store_true')
+    parser.add_argument('--eval_model', type=str, default='gpt-5.4')
+    parser.add_argument('--generated_model_name', type=str, default='google/gemini-3-flash-preview')
+    parser.add_argument('--run_rubric_eval', action='store_true')
+    parser.add_argument('--skip_legacy_eval', action='store_true')
+    args = parser.parse_args()
+
+    mainworkflow(
+        args.idx,
+        workspace=args.workspace,
+        benchmark_dir=args.benchmark_dir,
+        direct_eval=args.direct_eval,
+        eval_model=args.eval_model,
+        generated_model_name=args.generated_model_name,
+        run_rubric_eval=args.run_rubric_eval,
+        skip_legacy_eval=args.skip_legacy_eval,
+    )

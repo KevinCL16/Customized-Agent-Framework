@@ -99,50 +99,113 @@ To execute the MatPlotAgent framework, use the following script:
 
 ```bash
 python workflow.py \
-    --model_type=MODEL \
-    --workspace=path/to/result
+    --model_type MODEL \
+    --workspace path/to/result
 ```
 
 Replace `MODEL` with the desired model. All available `model_type` options can be found in `models/model_config.py`.
 
 Replace `path/to/result` with the desired path to save the results.
 
+The benchmark runner also supports filtering and prompt variants:
+
+```bash
+python workflow.py \
+    --model_type gpt-5.4-mini \
+    --workspace workspace_matplotbench_gpt54mini_capimagine_full \
+    --benchmark_dir benchmark_data \
+    --visual_refine true \
+    --visual_refine_prompt_variant capimagine \
+    --start_id 1 \
+    --end_id 100
+```
+
+Useful flags:
+
+- `--benchmark_dir`: resolves benchmark files without hard-coded local paths
+- `--start_id`, `--end_id`, `--data_ids`: run subsets of MatPlotBench
+- `--visual_refine_prompt_variant {default,capimagine}`: switch between the original visual-refine prompt and the CapImagine-style text-space imagination variant
+
 For direct decoding, use:
 
 ```bash
 python one_time_generate.py \
-    --model_type=MODEL \
-    --workspace=path/to/result
+    --model_type MODEL \
+    --workspace path/to/result
 ```
 
 For zero-shot COT, use:
 
 ```bash
 python one_time_generate_COT.py \
-    --model_type=MODEL \
-    --workspace=path/to/result
+    --model_type MODEL \
+    --workspace path/to/result
 ```
 
 ## Evaluation Pipeline
 
 After running the MatPlotAgent Framework, you can utilize the Evaluation Pipeline to obtain automatic evaluation scores.
 
-First, replace `directory_path` with `path/to/result` in `evaluation/api_eval.py` and `evaluation/average_score_calc.py`.
-
-Then, run:
+Legacy resemblance evaluation:
 
 ```bash
-bash evaluation/eval.sh
+python evaluation/api_eval.py 17 \
+    --workspace workspace_matplotbench_gpt54mini_full \
+    --benchmark_dir benchmark_data \
+    --direct_eval \
+    --generated_model_name gpt-5.4-mini \
+    --eval_model gpt-4o
 ```
 
-After running the above command, execute:
+Rubric-based evaluation in parallel with the legacy judge:
 
 ```bash
-cd evaluation
-python average_score_calc.py
+python evaluation/api_eval.py 17 \
+    --workspace workspace_matplotbench_gpt54mini_capimagine_full \
+    --benchmark_dir benchmark_data \
+    --direct_eval \
+    --generated_model_name gpt-5.4-mini_capimagine \
+    --eval_model gpt-5.4 \
+    --run_rubric_eval
 ```
 
-You will receive the score.
+Average score aggregation:
+
+```bash
+python evaluation/average_score_calc.py \
+    --workspace workspace_matplotbench_gpt54mini_capimagine_full \
+    --generated_model_name gpt-5.4-mini_capimagine \
+    --eval_model gpt-5.4 \
+    --score_type combined
+```
+
+Supported score modes:
+
+- `legacy`: original resemblance-only judge
+- `rubric`: query-conditioned rubric judge
+- `combined`: weighted combination of legacy and rubric scores (`0.5 / 0.5` by default)
+
+For merged analyses that combine a full run with hard-case reruns, use:
+
+```bash
+python evaluation/full_bucket_analysis.py \
+    --default_base_workspace workspace_matplotbench_gpt54mini_full \
+    --default_override_workspace workspace_low20_gpt54mini_default_rerun \
+    --cap_base_workspace workspace_matplotbench_gpt54mini_capimagine_full \
+    --cap_override_workspace workspace_low20_gpt54mini_capimagine_rerun \
+    --eval_model gpt-4o \
+    --output_path gpt54mini_full_merged_analysis_by_gpt4o.json
+```
+
+## Local Repo Updates
+
+This repository has been updated to support a more reproducible local MatPlotBench workflow:
+
+- benchmark input copying is centralized in `matplotbench_runtime.py`
+- benchmark generation scripts now accept `--benchmark_dir`, subset filters, and real model names
+- `workflow.py` preserves both the original visual-refine prompt and a parallel CapImagine-style prompt variant
+- `evaluation/api_eval.py` keeps the legacy resemblance judge and adds a parallel rubric-based judge
+- `evaluation/average_score_calc.py` and `evaluation/full_bucket_analysis.py` support legacy, rubric, combined, and bucketed analysis workflows
 
 
 

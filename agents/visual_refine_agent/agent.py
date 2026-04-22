@@ -1,11 +1,15 @@
 import os
 import base64
-import pdb
 import re
 
 from mimetypes import guess_type
-from .prompt import SYSTEM_PROMPT, USER_PROMPT, ERROR_PROMPT
-from agents.openai_chatComplete import  completion_for_4v
+from .prompt import (
+    SYSTEM_PROMPT,
+    USER_PROMPT,
+    CAPIMAGINE_SYSTEM_PROMPT,
+    CAPIMAGINE_USER_PROMPT,
+)
+from agents.openai_chatComplete import completion_for_4v
 from agents.utils import fill_in_placeholders
 from agents.generic_agent import GenericAgent
 
@@ -40,13 +44,17 @@ class VisualRefineAgent(GenericAgent):
         self.plot_file = kwargs.get('plot_file', '')
         self.code = kwargs.get('code', '')
         self.query = kwargs.get('query', '')
+        self.prompt_variant = kwargs.get('prompt_variant', 'default')
+
+    def _get_prompts(self):
+        if self.prompt_variant == 'capimagine':
+            return CAPIMAGINE_SYSTEM_PROMPT, CAPIMAGINE_USER_PROMPT
+        return SYSTEM_PROMPT, USER_PROMPT
 
     def run(self, model_type, query_type, file_name):
         plot = os.path.join(self.workspace['workspace'], self.plot_file)
 
         print(f"Plot directory: {plot}\n")
-        # pdb.set_trace()
-        base64_image1 = encode_image(f"{plot}")
         chen_img_url = local_image_to_data_url(f"{plot}")
 
         information = {
@@ -54,11 +62,12 @@ class VisualRefineAgent(GenericAgent):
             'file_name': file_name,
             'code': self.code
         }
+        system_prompt, user_prompt = self._get_prompts()
 
         messages = []
-        messages.append({"role": "system", "content": fill_in_placeholders(SYSTEM_PROMPT, information)})
+        messages.append({"role": "system", "content": fill_in_placeholders(system_prompt, information)})
         messages.append({"role": "user",
-                        "content": [{"type": "text", "text": fill_in_placeholders(USER_PROMPT, information)},
+                        "content": [{"type": "text", "text": fill_in_placeholders(user_prompt, information)},
                                     {
                                     "type": "image_url",
                                     "image_url": {
@@ -68,6 +77,6 @@ class VisualRefineAgent(GenericAgent):
                                     },
                                     ]
                         })
-        visual_feedback = completion_for_4v(messages, 'gpt-4o')
+        visual_feedback = completion_for_4v(messages, model_type)
 
         return visual_feedback

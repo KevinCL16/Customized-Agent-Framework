@@ -1,0 +1,1617 @@
+{
+  "eval_model": "gpt-4o",
+  "weights": {
+    "legacy": 0.5,
+    "rubric": 0.5
+  },
+  "override_ids": [],
+  "overall": {
+    "default": {
+      "legacy": 67.46,
+      "rubric": 85.4040404040404,
+      "combined": 76.72222222222223
+    },
+    "capimagine": {
+      "legacy": 68.79,
+      "rubric": 84.94897959183673,
+      "combined": 76.70408163265306
+    }
+  },
+  "overall_delta_cap_minus_default": {
+    "legacy": 1.3300000000000125,
+    "rubric": -0.45506081220366923,
+    "combined": -0.018140589569171084
+  },
+  "buckets": [
+    {
+      "bucket": "0-20",
+      "count": 7,
+      "example_ids": [
+        18,
+        30,
+        33,
+        42,
+        55,
+        60,
+        71
+      ],
+      "default": {
+        "legacy": 10.0,
+        "rubric": 43.0,
+        "combined": 26.5
+      },
+      "capimagine": {
+        "legacy": 28.571428571428573,
+        "rubric": 54.714285714285715,
+        "combined": 41.642857142857146
+      },
+      "delta_cap_minus_default": {
+        "legacy": 18.571428571428573,
+        "rubric": 11.714285714285715,
+        "combined": 15.142857142857146
+      }
+    },
+    {
+      "bucket": "20-40",
+      "count": 7,
+      "example_ids": [
+        1,
+        12,
+        19,
+        38,
+        48,
+        56,
+        59
+      ],
+      "default": {
+        "legacy": 28.571428571428573,
+        "rubric": 83.85714285714286,
+        "combined": 56.214285714285715
+      },
+      "capimagine": {
+        "legacy": 74.0,
+        "rubric": 87.42857142857143,
+        "combined": 80.71428571428571
+      },
+      "delta_cap_minus_default": {
+        "legacy": 45.42857142857143,
+        "rubric": 3.5714285714285694,
+        "combined": 24.499999999999993
+      }
+    },
+    {
+      "bucket": "40-60",
+      "count": 9,
+      "example_ids": [
+        6,
+        16,
+        29,
+        39,
+        51,
+        52,
+        66,
+        91,
+        94
+      ],
+      "default": {
+        "legacy": 46.666666666666664,
+        "rubric": 77.33333333333333,
+        "combined": 62.0
+      },
+      "capimagine": {
+        "legacy": 51.111111111111114,
+        "rubric": 80.05555555555556,
+        "combined": 65.58333333333333
+      },
+      "delta_cap_minus_default": {
+        "legacy": 4.44444444444445,
+        "rubric": 2.7222222222222285,
+        "combined": 3.5833333333333286
+      }
+    },
+    {
+      "bucket": "60+",
+      "count": 77,
+      "example_ids": [
+        2,
+        3,
+        4,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15,
+        17,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        31,
+        32,
+        34,
+        35,
+        36,
+        37,
+        40,
+        41,
+        43,
+        44,
+        45,
+        46,
+        47,
+        49,
+        50,
+        53,
+        54,
+        57,
+        58,
+        61,
+        62,
+        63,
+        64,
+        65,
+        67,
+        68,
+        69,
+        70,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        92,
+        93,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100
+      ],
+      "default": {
+        "legacy": 78.64935064935065,
+        "rubric": 89.79220779220779,
+        "combined": 84.22077922077922
+      },
+      "capimagine": {
+        "legacy": 74.03896103896103,
+        "rubric": 88.12666666666667,
+        "combined": 80.93666666666667
+      },
+      "delta_cap_minus_default": {
+        "legacy": -4.610389610389618,
+        "rubric": -1.6655411255411252,
+        "combined": -3.2841125541125535
+      }
+    }
+  ],
+  "per_example": {
+    "default": {
+      "1": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_1",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 30.0,
+        "rubric": 91.0,
+        "combined": 60.5
+      },
+      "2": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_2",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 75.0,
+        "rubric": 100.0,
+        "combined": 87.5
+      },
+      "3": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_3",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 80.0,
+        "rubric": 90.5,
+        "combined": 85.25
+      },
+      "4": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_4",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 85.5,
+        "combined": 85.25
+      },
+      "5": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_5",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 75.0,
+        "rubric": 85.5,
+        "combined": 80.25
+      },
+      "6": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_6",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 50.0,
+        "rubric": 86.5,
+        "combined": 68.25
+      },
+      "7": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_7",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 88.0,
+        "combined": 79.0
+      },
+      "8": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_8",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 100.0,
+        "combined": 97.5
+      },
+      "9": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_9",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 100.0,
+        "combined": 97.5
+      },
+      "10": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_10",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 78.0,
+        "combined": 74.0
+      },
+      "11": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_11",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 87.5,
+        "combined": 88.75
+      },
+      "12": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_12",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 30.0,
+        "rubric": 91.5,
+        "combined": 60.75
+      },
+      "13": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_13",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 85.5,
+        "combined": 72.75
+      },
+      "14": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_14",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 91.0,
+        "combined": 90.5
+      },
+      "15": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_15",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 91.0,
+        "combined": 88.0
+      },
+      "16": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_16",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 40.0,
+        "rubric": 49.0,
+        "combined": 44.5
+      },
+      "17": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_17",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 88.0,
+        "combined": 74.0
+      },
+      "18": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_18",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 10.0,
+        "rubric": 22.0,
+        "combined": 16.0
+      },
+      "19": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_19",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 30.0,
+        "rubric": 96.0,
+        "combined": 63.0
+      },
+      "20": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_20",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 91.0,
+        "combined": 90.5
+      },
+      "21": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_21",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 81.0,
+        "combined": 75.5
+      },
+      "22": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_22",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 98.0,
+        "combined": 91.5
+      },
+      "23": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_23",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 100.0,
+        "combined": 95.0
+      },
+      "24": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_24",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 98.0,
+        "combined": 96.5
+      },
+      "25": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_25",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 94.5,
+        "combined": 94.75
+      },
+      "26": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_26",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 91.0,
+        "combined": 90.5
+      },
+      "27": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_27",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 91.0,
+        "combined": 88.0
+      },
+      "28": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_28",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 100.0,
+        "combined": 97.5
+      },
+      "29": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_29",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 40.0,
+        "rubric": 87.0,
+        "combined": 63.5
+      },
+      "30": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_30",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 10.0,
+        "rubric": null,
+        "combined": null
+      },
+      "31": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_31",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 100.0,
+        "combined": 92.5
+      },
+      "32": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_32",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 80.5,
+        "combined": 70.25
+      },
+      "33": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_33",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 10.0,
+        "rubric": 21.0,
+        "combined": 15.5
+      },
+      "34": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_34",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 80.0,
+        "combined": 75.0
+      },
+      "35": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_35",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 94.5,
+        "combined": 89.75
+      },
+      "36": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_36",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 94.5,
+        "combined": 92.25
+      },
+      "37": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_37",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 99.0,
+        "combined": 97.0
+      },
+      "38": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_38",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 30.0,
+        "rubric": 54.0,
+        "combined": 42.0
+      },
+      "39": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_39",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 40.0,
+        "rubric": 91.0,
+        "combined": 65.5
+      },
+      "40": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_40",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 80.0,
+        "rubric": 87.0,
+        "combined": 83.5
+      },
+      "41": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_41",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 72.0,
+        "combined": 66.0
+      },
+      "42": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_42",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 10.0,
+        "rubric": 18.0,
+        "combined": 14.0
+      },
+      "43": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_43",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 100.0,
+        "combined": 97.5
+      },
+      "44": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_44",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 98.0,
+        "combined": 96.5
+      },
+      "45": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_45",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 92.0,
+        "combined": 91.0
+      },
+      "46": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_46",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 81.0,
+        "rubric": 87.0,
+        "combined": 84.0
+      },
+      "47": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_47",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 97.5,
+        "combined": 91.25
+      },
+      "48": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_48",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 30.0,
+        "rubric": 85.5,
+        "combined": 57.75
+      },
+      "49": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_49",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 100.0,
+        "combined": 97.5
+      },
+      "50": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_50",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 88.0,
+        "combined": 86.5
+      },
+      "51": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_51",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 50.0,
+        "rubric": 80.0,
+        "combined": 65.0
+      },
+      "52": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_52",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 50.0,
+        "rubric": 94.0,
+        "combined": 72.0
+      },
+      "53": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_53",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 91.5,
+        "combined": 80.75
+      },
+      "54": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_54",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 90.5,
+        "combined": 80.25
+      },
+      "55": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_55",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 10.0,
+        "rubric": 32.0,
+        "combined": 21.0
+      },
+      "56": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_56",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 30.0,
+        "rubric": 82.0,
+        "combined": 56.0
+      },
+      "57": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_57",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 91.0,
+        "combined": 75.5
+      },
+      "58": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_58",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 97.5,
+        "combined": 96.25
+      },
+      "59": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_59",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 20.0,
+        "rubric": 87.0,
+        "combined": 53.5
+      },
+      "60": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_60",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 10.0,
+        "rubric": 76.0,
+        "combined": 43.0
+      },
+      "61": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_61",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 89.0,
+        "combined": 89.5
+      },
+      "62": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_62",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 95.0,
+        "rubric": 96.0,
+        "combined": 95.5
+      },
+      "63": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_63",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 98.0,
+        "combined": 91.5
+      },
+      "64": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_64",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 80.0,
+        "rubric": 82.0,
+        "combined": 81.0
+      },
+      "65": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_65",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 93.5,
+        "combined": 91.75
+      },
+      "66": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_66",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 50.0,
+        "rubric": 82.5,
+        "combined": 66.25
+      },
+      "67": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_67",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 91.5,
+        "combined": 88.25
+      },
+      "68": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_68",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 71.0,
+        "combined": 65.5
+      },
+      "69": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_69",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 96.5,
+        "combined": 90.75
+      },
+      "70": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_70",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 84.5,
+        "combined": 72.25
+      },
+      "71": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_71",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 10.0,
+        "rubric": 89.0,
+        "combined": 49.5
+      },
+      "72": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_72",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 93.0,
+        "combined": 89.0
+      },
+      "73": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_73",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 68.0,
+        "combined": 64.0
+      },
+      "74": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_74",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 91.0,
+        "combined": 80.5
+      },
+      "75": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_75",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 87.0,
+        "combined": 86.0
+      },
+      "76": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_76",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 80.0,
+        "rubric": 91.0,
+        "combined": 85.5
+      },
+      "77": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_77",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 91.5,
+        "combined": 75.75
+      },
+      "78": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_78",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 92.0,
+        "combined": 81.0
+      },
+      "79": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_79",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 86.0,
+        "combined": 73.0
+      },
+      "80": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_80",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 87.0,
+        "combined": 73.5
+      },
+      "81": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_81",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 91.0,
+        "combined": 75.5
+      },
+      "82": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_82",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 87.5,
+        "combined": 88.75
+      },
+      "83": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_83",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 91.0,
+        "combined": 88.0
+      },
+      "84": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_84",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 81.0,
+        "combined": 70.5
+      },
+      "85": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_85",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 89.0,
+        "combined": 74.5
+      },
+      "86": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_86",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 74.0,
+        "combined": 72.0
+      },
+      "87": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_87",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 91.5,
+        "combined": 90.75
+      },
+      "88": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_88",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 80.0,
+        "combined": 82.5
+      },
+      "89": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_89",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 93.0,
+        "combined": 81.5
+      },
+      "90": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_90",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 86.0,
+        "combined": 73.0
+      },
+      "91": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_91",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 50.0,
+        "rubric": 62.0,
+        "combined": 56.0
+      },
+      "92": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_92",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 95.0,
+        "combined": 90.0
+      },
+      "93": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_93",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 90.0,
+        "rubric": 95.0,
+        "combined": 92.5
+      },
+      "94": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_94",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 50.0,
+        "rubric": 64.0,
+        "combined": 57.0
+      },
+      "95": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_95",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 84.0,
+        "combined": 77.0
+      },
+      "96": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_96",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 85.0,
+        "rubric": 91.0,
+        "combined": 88.0
+      },
+      "97": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_97",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 70.0,
+        "rubric": 90.5,
+        "combined": 80.25
+      },
+      "98": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_98",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 71.0,
+        "combined": 65.5
+      },
+      "99": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_99",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 75.0,
+        "rubric": 92.0,
+        "combined": 83.5
+      },
+      "100": {
+        "example_dir": "workspace_finalproj_gpt54mini_default_full\\example_100",
+        "resolved_model_name": "gpt54mini_default",
+        "legacy": 60.0,
+        "rubric": 87.5,
+        "combined": 73.75
+      }
+    },
+    "capimagine": {
+      "1": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_1",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 90.0,
+        "combined": 75.0
+      },
+      "2": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_2",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 98.0,
+        "combined": 79.0
+      },
+      "3": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_3",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 82.0,
+        "combined": 71.0
+      },
+      "4": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_4",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 82.0,
+        "combined": 76.0
+      },
+      "5": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_5",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 92.0,
+        "combined": 88.5
+      },
+      "6": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_6",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 86.5,
+        "combined": 78.25
+      },
+      "7": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_7",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 40.0,
+        "rubric": 88.0,
+        "combined": 64.0
+      },
+      "8": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_8",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 100.0,
+        "combined": 97.5
+      },
+      "9": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_9",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 92.5,
+        "combined": 93.75
+      },
+      "10": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_10",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 90.0,
+        "combined": 87.5
+      },
+      "11": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_11",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 90.0,
+        "rubric": 87.5,
+        "combined": 88.75
+      },
+      "12": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_12",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 90.0,
+        "rubric": 98.0,
+        "combined": 94.0
+      },
+      "13": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_13",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 30.0,
+        "rubric": 81.0,
+        "combined": 55.5
+      },
+      "14": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_14",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 20.0,
+        "rubric": 86.0,
+        "combined": 53.0
+      },
+      "15": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_15",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 98.0,
+        "combined": 91.5
+      },
+      "16": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_16",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 80.0,
+        "rubric": 82.0,
+        "combined": 81.0
+      },
+      "17": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_17",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 30.0,
+        "rubric": 88.0,
+        "combined": 59.0
+      },
+      "18": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_18",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 20.0,
+        "rubric": 22.0,
+        "combined": 21.0
+      },
+      "19": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_19",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 98.0,
+        "combined": 96.5
+      },
+      "20": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_20",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 91.0,
+        "combined": 88.0
+      },
+      "21": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_21",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 89.0,
+        "combined": 79.5
+      },
+      "22": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_22",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 87.0,
+        "combined": 86.0
+      },
+      "23": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_23",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 90.0,
+        "rubric": 100.0,
+        "combined": 95.0
+      },
+      "24": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_24",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 94.0,
+        "combined": 94.5
+      },
+      "25": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_25",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 98.0,
+        "combined": 79.0
+      },
+      "26": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_26",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 90.0,
+        "rubric": 94.5,
+        "combined": 92.25
+      },
+      "27": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_27",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 91.0,
+        "combined": 88.0
+      },
+      "28": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_28",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 92.0,
+        "combined": 93.5
+      },
+      "29": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_29",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 20.0,
+        "rubric": 77.0,
+        "combined": 48.5
+      },
+      "30": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_30",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 20.0,
+        "rubric": 65.0,
+        "combined": 42.5
+      },
+      "31": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_31",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 50.0,
+        "rubric": 67.0,
+        "combined": 58.5
+      },
+      "32": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_32",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 20.0,
+        "rubric": 48.0,
+        "combined": 34.0
+      },
+      "33": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_33",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 83.0,
+        "combined": 76.5
+      },
+      "34": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_34",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 50.0,
+        "rubric": 67.0,
+        "combined": 58.5
+      },
+      "35": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_35",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 86.0,
+        "rubric": 91.0,
+        "combined": 88.5
+      },
+      "36": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_36",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 75.0,
+        "rubric": 87.0,
+        "combined": 81.0
+      },
+      "37": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_37",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 100.0,
+        "combined": 92.5
+      },
+      "38": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_38",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 61.0,
+        "combined": 65.5
+      },
+      "39": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_39",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 0.0,
+        "rubric": 65.0,
+        "combined": 32.5
+      },
+      "40": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_40",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 90.0,
+        "combined": 87.5
+      },
+      "41": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_41",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 67.0,
+        "combined": 63.5
+      },
+      "42": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_42",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 0.0,
+        "rubric": 0.0,
+        "combined": 0.0
+      },
+      "43": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_43",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 100.0,
+        "combined": 97.5
+      },
+      "44": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_44",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 90.0,
+        "rubric": 96.0,
+        "combined": 93.0
+      },
+      "45": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_45",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 100.0,
+        "combined": 97.5
+      },
+      "46": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_46",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 85.0,
+        "combined": 72.5
+      },
+      "47": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_47",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": null,
+        "combined": null
+      },
+      "48": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_48",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 50.0,
+        "rubric": 91.0,
+        "combined": 70.5
+      },
+      "49": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_49",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 100.0,
+        "combined": 92.5
+      },
+      "50": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_50",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 80.0,
+        "rubric": 94.0,
+        "combined": 87.0
+      },
+      "51": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_51",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 86.0,
+        "combined": 73.0
+      },
+      "52": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_52",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 86.0,
+        "combined": 78.0
+      },
+      "53": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_53",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 95.5,
+        "combined": 82.75
+      },
+      "54": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_54",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 90.0,
+        "rubric": 86.5,
+        "combined": 88.25
+      },
+      "55": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_55",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 64.0,
+        "combined": 62.0
+      },
+      "56": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_56",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 89.0,
+        "combined": 79.5
+      },
+      "57": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_57",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 100.0,
+        "combined": 92.5
+      },
+      "58": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_58",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 97.0,
+        "combined": 96.0
+      },
+      "59": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_59",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 83.0,
+        "rubric": 85.0,
+        "combined": 84.0
+      },
+      "60": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_60",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 10.0,
+        "rubric": 58.0,
+        "combined": 34.0
+      },
+      "61": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_61",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 91.0,
+        "combined": 93.0
+      },
+      "62": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_62",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 100.0,
+        "combined": 97.5
+      },
+      "63": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_63",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 98.0,
+        "combined": 91.5
+      },
+      "64": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_64",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 87.0,
+        "combined": 73.5
+      },
+      "65": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_65",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 90.0,
+        "rubric": 92.5,
+        "combined": 91.25
+      },
+      "66": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_66",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 50.0,
+        "rubric": 89.0,
+        "combined": 69.5
+      },
+      "67": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_67",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 80.0,
+        "rubric": 93.0,
+        "combined": 86.5
+      },
+      "68": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_68",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 94.0,
+        "combined": 94.5
+      },
+      "69": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_69",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": null,
+        "combined": null
+      },
+      "70": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_70",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 83.0,
+        "combined": 84.0
+      },
+      "71": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_71",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 20.0,
+        "rubric": 91.0,
+        "combined": 55.5
+      },
+      "72": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_72",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 91.5,
+        "combined": 88.25
+      },
+      "73": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_73",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 92.0,
+        "combined": 76.0
+      },
+      "74": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_74",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 91.0,
+        "combined": 75.5
+      },
+      "75": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_75",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 89.0,
+        "combined": 79.5
+      },
+      "76": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_76",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 80.0,
+        "rubric": 92.0,
+        "combined": 86.0
+      },
+      "77": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_77",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 89.0,
+        "combined": 74.5
+      },
+      "78": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_78",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 75.0,
+        "rubric": 91.0,
+        "combined": 83.0
+      },
+      "79": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_79",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 75.0,
+        "rubric": 91.0,
+        "combined": 83.0
+      },
+      "80": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_80",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 91.5,
+        "combined": 75.75
+      },
+      "81": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_81",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 20.0,
+        "rubric": 45.0,
+        "combined": 32.5
+      },
+      "82": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_82",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 90.5,
+        "combined": 87.75
+      },
+      "83": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_83",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 91.0,
+        "combined": 88.0
+      },
+      "84": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_84",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 87.0,
+        "combined": 78.5
+      },
+      "85": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_85",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 91.5,
+        "combined": 88.25
+      },
+      "86": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_86",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 90.0,
+        "rubric": 94.5,
+        "combined": 92.25
+      },
+      "87": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_87",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 95.0,
+        "rubric": 94.0,
+        "combined": 94.5
+      },
+      "88": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_88",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 0.0,
+        "rubric": 8.0,
+        "combined": 4.0
+      },
+      "89": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_89",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 89.0,
+        "combined": 79.5
+      },
+      "90": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_90",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 81.0,
+        "combined": 70.5
+      },
+      "91": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_91",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 50.0,
+        "rubric": 63.0,
+        "combined": 56.5
+      },
+      "92": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_92",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 86.0,
+        "combined": 85.5
+      },
+      "93": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_93",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 90.0,
+        "combined": 80.0
+      },
+      "94": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_94",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 86.0,
+        "combined": 73.0
+      },
+      "95": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_95",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 86.0,
+        "combined": 78.0
+      },
+      "96": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_96",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 80.0,
+        "rubric": 90.5,
+        "combined": 85.25
+      },
+      "97": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_97",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 70.0,
+        "rubric": 95.0,
+        "combined": 82.5
+      },
+      "98": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_98",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 60.0,
+        "rubric": 82.0,
+        "combined": 71.0
+      },
+      "99": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_99",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 92.0,
+        "combined": 88.5
+      },
+      "100": {
+        "example_dir": "workspace_matplotbench_gpt54mini_capimagine_full\\example_100",
+        "resolved_model_name": "gpt-5.4-mini_capimagine",
+        "legacy": 85.0,
+        "rubric": 87.5,
+        "combined": 86.25
+      }
+    }
+  }
+}

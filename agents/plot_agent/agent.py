@@ -1,3 +1,4 @@
+import ast
 import os
 import re
 from agents.generic_agent import GenericAgent
@@ -5,7 +6,7 @@ from agents.openai_chatComplete import completion_with_backoff
 from agents.utils import fill_in_placeholders, get_error_message, is_run_code_success, run_code
 from agents.utils import print_filesys_struture
 from agents.utils import change_directory
-from agents.plot_agent.prompt import INITIAL_SYSTEM_PROMPT, INITIAL_USER_PROMPT, VIS_SYSTEM_PROMPT, VIS_USER_PROMPT, ERROR_PROMPT
+from agents.plot_agent.prompt import INITIAL_SYSTEM_PROMPT, INITIAL_USER_PROMPT, VIS_SYSTEM_PROMPT, VIS_USER_PROMPT, ERROR_PROMPT, ZERO_SHOT_COT_PROMPT
 
 
 class PlotAgent(GenericAgent):
@@ -17,9 +18,82 @@ class PlotAgent(GenericAgent):
         self.query = kwargs.get('query', '')
         self.data_information = kwargs.get('data_information', None)
 
+    def _workspace_path(self):
+        if isinstance(self.workspace, dict):
+            return self.workspace["workspace"]
+        return self.workspace
+
+    def _sanitize_model_type(self, model_type):
+        return model_type.replace("/", "_").replace(":", "_")
+
+    def _target_image_exists(self, workspace_path, image_file):
+        return os.path.exists(os.path.join(workspace_path, image_file))
+
+    def _strip_blocking_show_calls(self, code):
+        # Remove blocking matplotlib display calls during batch experiments.
+        patterns = [
+            r'(?m)^[ \t]*plt\.show\s*\([^)]*\)\s*;?\s*$',
+            r'(?m)^[ \t]*matplotlib\.pyplot\.show\s*\([^)]*\)\s*;?\s*$',
+            r'(?m)^[ \t]*from matplotlib import pyplot as plt\s*;?\s*$',
+        ]
+
+        cleaned_code = code
+        for pattern in patterns[:2]:
+            cleaned_code = re.sub(pattern, '', cleaned_code)
+
+        # Handle inline cases such as `foo(); plt.show()`.
+        cleaned_code = re.sub(r';\s*plt\.show\s*\([^)]*\)\s*', '', cleaned_code)
+        cleaned_code = re.sub(r';\s*matplotlib\.pyplot\.show\s*\([^)]*\)\s*', '', cleaned_code)
+        return cleaned_code
+
+    def _ensure_entrypoint(self, code):
+        try:
+            tree = ast.parse(code)
+        except SyntaxError:
+            return code
+
+        has_main_guard = False
+        top_level_functions = []
+        called_functions = set()
+
+        for node in tree.body:
+            if isinstance(node, ast.If):
+                test = node.test
+                if (
+                    isinstance(test, ast.Compare)
+                    and isinstance(test.left, ast.Name)
+                    and test.left.id == "__name__"
+                    and len(test.comparators) == 1
+                    and isinstance(test.comparators[0], ast.Constant)
+                    and test.comparators[0].value == "__main__"
+                ):
+                    has_main_guard = True
+            elif isinstance(node, ast.FunctionDef):
+                top_level_functions.append(node)
+            elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+                func = node.value.func
+                if isinstance(func, ast.Name):
+                    called_functions.add(func.id)
+
+        if has_main_guard:
+            return code
+
+        candidate = None
+        for func in reversed(top_level_functions):
+            if func.name in called_functions:
+                return code
+            if not func.args.args and not func.args.posonlyargs and not func.args.kwonlyargs:
+                candidate = func.name
+                break
+
+        if candidate is None:
+            return code
+
+        return code.rstrip() + f"\n\n{candidate}()\n"
+
     def generate(self, user_prompt, model_type, query_type, file_name):
 
-        workspace_structure = print_filesys_struture(self.workspace["workspace"])
+        workspace_structure = print_filesys_struture(self._workspace_path())
         
         information = {
             'workspace_structure': workspace_structure,
@@ -70,9 +144,17 @@ class PlotAgent(GenericAgent):
                     return '\n'.join(code_lines)
         return all_code_blocks_combined
 
-    def run(self, query, model_type, query_type, file_name):
+    def run(self, query=None, model_type='google/gemini-3-flash-preview', query_type='initial', file_name='plot.png', queries=None, individual_workspace=None):
         try_count = 0
         image_file = file_name
+        code = ''
+        if query is None:
+            if isinstance(queries, dict):
+                query = queries.get('simple_instruction') or queries.get('expert_instruction') or str(queries)
+            else:
+                query = queries
+        if query is None:
+            query = self.query
         result = self.generate(query, model_type=model_type, query_type=query_type, file_name=file_name)
         while try_count < 4:
             
@@ -88,20 +170,24 @@ class PlotAgent(GenericAgent):
                             code = self.get_code(query)
             else:
                 code = self.get_code(result)
+            code = self._strip_blocking_show_calls(code)
+            code = self._ensure_entrypoint(code)
             self.chat_history.append({"role": "assistant", "content": result if result.strip() != '' else ''})
 
 
-            file_name = f'code_action_{model_type}_{query_type}_{try_count}.py'
-            with open(os.path.join(self.workspace['workspace'], file_name), 'w', encoding='utf-8') as f:
+            safe_model_type = self._sanitize_model_type(model_type)
+            file_name = f'code_action_{safe_model_type}_{query_type}_{try_count}.py'
+            workspace_path = self._workspace_path()
+            with open(os.path.join(workspace_path, file_name), 'w', encoding='utf-8') as f:
                 f.write(code)
             error = None
-            log = run_code(self.workspace['workspace'], file_name)
+            log = run_code(workspace_path, file_name)
 
             if is_run_code_success(log):
-                if print_filesys_struture(self.workspace['workspace']).find('.png') == -1:
+                if not self._target_image_exists(workspace_path, image_file):
                     log = log + '\n' + 'No plot generated.'
                     
-                    self.chat_history.append({"role": "user", "content": fill_in_placeholders(self.prompts['error'],
+                    self.chat_history.append({"role": "user", "content": fill_in_placeholders(ERROR_PROMPT,
                                                                                           {'error_message': f'No plot generated. When you complete a plot, remember to save it to a png file. The file name should be """{image_file}""".',
                                                                                            'data_information': self.data_information})})
                     try_count += 1
@@ -139,7 +225,7 @@ class PlotAgent(GenericAgent):
         
         print('========Plot AGENT Novice RUN========')
         message = []
-        workspace_structure = print_filesys_struture(self.workspace)
+        workspace_structure = print_filesys_struture(self._workspace_path())
         
         information = {
             'workspace_structure': workspace_structure,
@@ -150,6 +236,8 @@ class PlotAgent(GenericAgent):
             message.append({"role": "system", "content": ''''''})
         message.append({"role": "user", "content": fill_in_placeholders(INITIAL_USER_PROMPT, information)})
         result = completion_with_backoff(message, model_type)
+        if not isinstance(result, str):
+            return 'TOO LONG FOR MODEL', ''
         if model_type != 'gpt-4':
             code = self.get_code(result)
             if code == '':
@@ -160,16 +248,19 @@ class PlotAgent(GenericAgent):
             code = self.get_code(result)
 
 
-        file_name = f'code_action_{model_type}_{query_type}_0.py'
-        with open(os.path.join(self.workspace, file_name), 'w') as f:
+        code = self._strip_blocking_show_calls(code)
+        safe_model_type = self._sanitize_model_type(model_type)
+        file_name = f'code_action_{safe_model_type}_{query_type}_0.py'
+        workspace_path = self._workspace_path()
+        with open(os.path.join(workspace_path, file_name), 'w', encoding='utf-8') as f:
             f.write(code)
-        log = run_code(self.workspace, file_name)
+        log = run_code(workspace_path, file_name)
         return log, code
     def run_one_time_zero_shot_COT(self, model_type, file_name,query_type='novice',no_sysprompt=False):
         
         print('========Plot AGENT Novice RUN========')
         message = []
-        workspace_structure = print_filesys_struture(self.workspace)
+        workspace_structure = print_filesys_struture(self._workspace_path())
         
         information = {
             'workspace_structure': workspace_structure,
@@ -179,6 +270,8 @@ class PlotAgent(GenericAgent):
         message.append({"role": "system", "content": ''''''})
         message.append({"role": "user", "content": fill_in_placeholders(ZERO_SHOT_COT_PROMPT, information)})
         result = completion_with_backoff(message, model_type)
+        if not isinstance(result, str):
+            return 'TOO LONG FOR MODEL', ''
         if model_type != 'gpt-4':
             code = self.get_code(result)
             if code == '':
@@ -188,8 +281,11 @@ class PlotAgent(GenericAgent):
         else:
             code = self.get_code(result)
 
-        file_name = f'code_action_{model_type}_{query_type}_0.py'
-        with open(os.path.join(self.workspace, file_name), 'w') as f:
+        code = self._strip_blocking_show_calls(code)
+        safe_model_type = self._sanitize_model_type(model_type)
+        file_name = f'code_action_{safe_model_type}_{query_type}_0.py'
+        workspace_path = self._workspace_path()
+        with open(os.path.join(workspace_path, file_name), 'w', encoding='utf-8') as f:
             f.write(code)
-        log = run_code(self.workspace, file_name)
+        log = run_code(workspace_path, file_name)
         return log, code

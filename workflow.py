@@ -17,7 +17,20 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--workspace', type=str, default='./workspace')
 parser.add_argument('--model_type', type=str, default='google/gemini-3-flash-preview')
 parser.add_argument('--visual_refine', type=lambda x: str(x).lower() == 'true', default=True)
-parser.add_argument('--visual_refine_prompt_variant', type=str, default='default', choices=['default', 'capimagine'])
+parser.add_argument(
+    '--visual_refine_prompt_variant',
+    type=str,
+    default='default',
+    choices=[
+        'default',
+        'capimagine',
+        'cap_full',
+        'cap_no_imagination',
+        'cap_no_root_cause',
+        'cap_no_revision_checklist',
+        'cap_no_preserve_correct_parts',
+    ],
+)
 parser.add_argument('--benchmark_dir', type=str, default=None)
 parser.add_argument('--start_id', type=int, default=None)
 parser.add_argument('--end_id', type=int, default=None)
@@ -53,6 +66,10 @@ def build_refinement_instruction(simple_instruction, expanded_instruction, origi
 
 Rewrite the plotting code so that it satisfies the original user query, preserves any correct existing logic, and applies the visual reasoning feedback above.
 '''
+
+
+def uses_structured_visual_reasoning(prompt_variant):
+    return prompt_variant != 'default'
 
 
 def mainworkflow(
@@ -128,7 +145,7 @@ def mainworkflow(
 
         print('=========Plotting with Visual Feedback=========')
 
-        if prompt_variant == 'capimagine':
+        if uses_structured_visual_reasoning(prompt_variant):
             final_instruction = build_refinement_instruction(
                 simple_instruction=simple_instruction,
                 expanded_instruction=expanded_simple_instruction,

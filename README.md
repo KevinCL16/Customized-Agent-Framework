@@ -124,7 +124,33 @@ Useful flags:
 
 - `--benchmark_dir`: resolves benchmark files without hard-coded local paths
 - `--start_id`, `--end_id`, `--data_ids`: run subsets of MatPlotBench
-- `--visual_refine_prompt_variant {default,capimagine}`: switch between the original visual-refine prompt and the CapImagine-style text-space imagination variant
+- `--visual_refine_prompt_variant {default,capimagine,cap_full,cap_no_imagination,cap_no_root_cause,cap_no_revision_checklist,cap_no_preserve_correct_parts}`: switch between the original visual-refine prompt, the full CapImagine-style variant, and the ablation variants used for prompt-component studies
+
+For reproducible experiment orchestration, use the runner:
+
+```bash
+python evaluation/final_project_runner.py manifest
+
+python evaluation/final_project_runner.py generate \
+    --model_alias gpt54mini \
+    --setting default \
+    --start_id 1 \
+    --end_id 100 \
+    --skip_existing
+
+python evaluation/final_project_runner.py eval \
+    --model_alias gpt54mini \
+    --setting default \
+    --eval_model gpt-5.4 \
+    --score_mode combined \
+    --skip_existing
+```
+
+Runner settings currently include:
+
+- reproduction settings: `direct`, `cot`, `default`
+- improvement setting: `capimagine`
+- ablation settings: `cap_full`, `cap_no_imagination`, `cap_no_root_cause`, `cap_no_revision_checklist`, `cap_no_preserve_correct_parts`
 
 For direct decoding, use:
 
@@ -197,14 +223,39 @@ python evaluation/full_bucket_analysis.py \
     --output_path gpt54mini_full_merged_analysis_by_gpt4o.json
 ```
 
+For full-vs-full bucket analysis without override reruns, omit the override workspaces:
+
+```bash
+python evaluation/full_bucket_analysis.py \
+    --default_base_workspace workspace_finalproj_gpt54mini_default_full \
+    --cap_base_workspace workspace_finalproj_gpt54mini_capimagine_full \
+    --eval_model gpt-5.4 \
+    --output_path outputs/gpt54mini_default_vs_capimagine_buckets.json
+```
+
+To build paper tables and case-study candidate lists from frozen workspaces:
+
+```bash
+python evaluation/final_project_tables.py \
+    --output_dir outputs/final_project_tables
+
+python evaluation/select_case_studies.py \
+    --model_alias gpt54mini \
+    --eval_model gpt-5.4 \
+    --output_path outputs/gpt54mini_case_studies.json
+```
+
 ## Local Repo Updates
 
 This repository has been updated to support a more reproducible local MatPlotBench workflow:
 
 - benchmark input copying is centralized in `matplotbench_runtime.py`
 - benchmark generation scripts now accept `--benchmark_dir`, subset filters, and real model names
-- `workflow.py` preserves both the original visual-refine prompt and a parallel CapImagine-style prompt variant
+- `workflow.py` preserves both the original visual-refine prompt, the full CapImagine-style prompt, and ablation-friendly `cap_*` prompt variants
 - `evaluation/api_eval.py` keeps the legacy resemblance judge and adds a parallel rubric-based judge
+- `evaluation/final_project_runner.py` standardizes workspace naming, generated model labels, resume-safe generation, and dual-track evaluation commands
+- `evaluation/final_project_tables.py` emits main-table / appendix-table artifacts in both JSON and Markdown
+- `evaluation/select_case_studies.py` selects representative reproduction and default-vs-capimagine image cases from frozen runs
 - `evaluation/average_score_calc.py` and `evaluation/full_bucket_analysis.py` support legacy, rubric, combined, and bucketed analysis workflows
 
 

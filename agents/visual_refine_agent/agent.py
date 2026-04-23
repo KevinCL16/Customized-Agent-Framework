@@ -8,6 +8,16 @@ from .prompt import (
     USER_PROMPT,
     CAPIMAGINE_SYSTEM_PROMPT,
     CAPIMAGINE_USER_PROMPT,
+    CAP_FULL_SYSTEM_PROMPT,
+    CAP_FULL_USER_PROMPT,
+    CAP_NO_IMAGINATION_SYSTEM_PROMPT,
+    CAP_NO_IMAGINATION_USER_PROMPT,
+    CAP_NO_ROOT_CAUSE_SYSTEM_PROMPT,
+    CAP_NO_ROOT_CAUSE_USER_PROMPT,
+    CAP_NO_REVISION_CHECKLIST_SYSTEM_PROMPT,
+    CAP_NO_REVISION_CHECKLIST_USER_PROMPT,
+    CAP_NO_PRESERVE_CORRECT_PARTS_SYSTEM_PROMPT,
+    CAP_NO_PRESERVE_CORRECT_PARTS_USER_PROMPT,
 )
 from agents.openai_chatComplete import completion_for_4v
 from agents.utils import fill_in_placeholders
@@ -47,9 +57,24 @@ class VisualRefineAgent(GenericAgent):
         self.prompt_variant = kwargs.get('prompt_variant', 'default')
 
     def _get_prompts(self):
-        if self.prompt_variant == 'capimagine':
-            return CAPIMAGINE_SYSTEM_PROMPT, CAPIMAGINE_USER_PROMPT
-        return SYSTEM_PROMPT, USER_PROMPT
+        prompt_map = {
+            'default': (SYSTEM_PROMPT, USER_PROMPT),
+            'capimagine': (CAPIMAGINE_SYSTEM_PROMPT, CAPIMAGINE_USER_PROMPT),
+            'cap_full': (CAP_FULL_SYSTEM_PROMPT, CAP_FULL_USER_PROMPT),
+            'cap_no_imagination': (CAP_NO_IMAGINATION_SYSTEM_PROMPT, CAP_NO_IMAGINATION_USER_PROMPT),
+            'cap_no_root_cause': (CAP_NO_ROOT_CAUSE_SYSTEM_PROMPT, CAP_NO_ROOT_CAUSE_USER_PROMPT),
+            'cap_no_revision_checklist': (
+                CAP_NO_REVISION_CHECKLIST_SYSTEM_PROMPT,
+                CAP_NO_REVISION_CHECKLIST_USER_PROMPT,
+            ),
+            'cap_no_preserve_correct_parts': (
+                CAP_NO_PRESERVE_CORRECT_PARTS_SYSTEM_PROMPT,
+                CAP_NO_PRESERVE_CORRECT_PARTS_USER_PROMPT,
+            ),
+        }
+        if self.prompt_variant not in prompt_map:
+            raise ValueError(f"Unsupported prompt variant: {self.prompt_variant}")
+        return prompt_map[self.prompt_variant]
 
     def run(self, model_type, query_type, file_name):
         plot = os.path.join(self.workspace['workspace'], self.plot_file)

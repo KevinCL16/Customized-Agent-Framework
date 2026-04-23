@@ -1,14 +1,8 @@
 import logging
-import pdb
 import traceback
 
 import openai
-from agents.config.openai import API_KEY, BASE_URL, global_temperature
-from tenacity import (
-    retry,
-    stop_after_attempt,
-    wait_random_exponential, stop_after_delay, RetryError
-)
+from agents.config.openai import get_api_config, global_temperature
 from models.model_config import MODEL_CONFIG
 
 
@@ -17,7 +11,6 @@ def print_chat_message(messages):
         logging.info(f"{message['role']}: {message['content']}")
 
 
-# @retry(wait=wait_random_exponential(min=0.1, max=20), stop=(stop_after_delay(30) | stop_after_attempt(100)))
 def completion_with_backoff(messages, model_type, backend='OpenRouter', temperature=0.0):
 
     if model_type in MODEL_CONFIG.keys():
@@ -64,16 +57,11 @@ def completion_with_backoff(messages, model_type, backend='OpenRouter', temperat
         return None
 
     else:
-        if backend == 'THU':
-            client = openai.OpenAI(
-                api_key=THU_API_KEY,
-                base_url=THU_BASE_URL,
-            )
-        else:
-            client = openai.OpenAI(
-                api_key=API_KEY,
-                base_url=BASE_URL,
-            )
+        api_config = get_api_config(model_type)
+        client = openai.OpenAI(
+            api_key=api_config["api_key"],
+            base_url=api_config["base_url"],
+        )
 
         try:
             response = client.chat.completions.create(
@@ -108,10 +96,13 @@ def completion_with_log(messages, model_type, enable_log=False):
 
 
 def completion_for_4v(messages, model_type):
-    openai.api_key = API_KEY
-    openai.base_url = BASE_URL
+    api_config = get_api_config(model_type)
+    client = openai.OpenAI(
+        api_key=api_config["api_key"],
+        base_url=api_config["base_url"],
+    )
 
-    response = openai.chat.completions.create(
+    response = client.chat.completions.create(
         model=model_type,
         messages=messages,
         temperature=global_temperature,

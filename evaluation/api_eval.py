@@ -11,7 +11,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from agents.plot_agent import PlotAgent
 from openai import OpenAI
-from agents.config.openai import API_KEY, BASE_URL
+from agents.config.openai import get_api_config
 from matplotbench_runtime import (
     copy_benchmark_inputs,
     ensure_example_workspace,
@@ -48,15 +48,22 @@ def resolve_eval_images(ground_truth, image, rollback, benchmark_dir):
     return benchmark_dir, reference_path, generated_path
 
 
+def completion_length_kwargs(model_name, token_limit):
+    if get_api_config(model_name)["provider"] == "openai":
+        return {"max_completion_tokens": token_limit}
+    return {"max_tokens": token_limit}
+
+
 def gpt_4_evaluate(code, query, image, eval_model):
     if not os.path.exists(f'{image}'):
         executable = 'False'
     else:
         executable = 'True'
 
+    api_config = get_api_config(eval_model)
     client = OpenAI(
-        api_key=API_KEY,
-        base_url=BASE_URL, )
+        api_key=api_config["api_key"],
+        base_url=api_config["base_url"], )
 
     response = client.chat.completions.create(
         model=eval_model,
@@ -91,7 +98,7 @@ For example [FINAL SCORE]: 40. A final score must be generated.''',
                 ],
             }
         ],
-        max_tokens=1000,
+        **completion_length_kwargs(eval_model, 1000),
     )
     return response.choices[0].message
 
@@ -104,9 +111,10 @@ def gpt_4v_evaluate(ground_truth, image, rollback, benchmark_dir, eval_model):
         benchmark_dir,
     )
 
+    api_config = get_api_config(eval_model)
     client = OpenAI(
-        api_key=API_KEY,
-        base_url=BASE_URL,)
+        api_key=api_config["api_key"],
+        base_url=api_config["base_url"],)
     base64_image1 = encode_image(reference_path)
     base64_image2 = encode_image(generated_path)
 
@@ -149,7 +157,7 @@ def gpt_4v_evaluate(ground_truth, image, rollback, benchmark_dir, eval_model):
           ],
         }
       ],
-      max_tokens=1000,
+      **completion_length_kwargs(eval_model, 1000),
     )
     return response.choices[0].message
 
@@ -162,9 +170,10 @@ def rubric_vlm_evaluate(query, ground_truth, image, rollback, benchmark_dir, eva
         benchmark_dir,
     )
 
+    api_config = get_api_config(eval_model)
     client = OpenAI(
-        api_key=API_KEY,
-        base_url=BASE_URL,
+        api_key=api_config["api_key"],
+        base_url=api_config["base_url"],
     )
     base64_reference = encode_image(reference_path)
     base64_generated = encode_image(generated_path)
@@ -231,7 +240,7 @@ RUBRIC SCORE = 0.4 * Task Compliance + 0.3 * Structural Match + 0.2 * Visual Enc
           ],
         }
       ],
-      max_tokens=1200,
+      **completion_length_kwargs(eval_model, 1200),
     )
     return response.choices[0].message
 

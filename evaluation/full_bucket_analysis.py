@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 
-LOW20_IDS = [42, 88, 18, 48, 60, 39, 71, 81, 29, 32, 59, 13, 41, 14, 30, 7, 70, 55, 17, 74]
+DEFAULT_OVERRIDE_IDS = []
 BUCKETS = [
     ("0-20", 0, 20),
     ("20-40", 20, 40),
@@ -28,7 +28,7 @@ def extract_last_score(log_path, pattern):
 
 
 def resolve_example_dir(base_workspace, override_workspace, example_id, override_ids):
-    if example_id in override_ids:
+    if override_workspace is not None and example_id in override_ids:
         candidate = override_workspace / f"example_{example_id}"
         if candidate.exists():
             return candidate
@@ -61,7 +61,11 @@ def load_scores_for_setting(
     data = {}
     for example_id in range(1, 101):
         example_dir = resolve_example_dir(base_workspace, override_workspace, example_id, override_ids)
-        is_override = example_id in override_ids and (override_workspace / f"example_{example_id}").exists()
+        is_override = (
+            override_workspace is not None
+            and example_id in override_ids
+            and (override_workspace / f"example_{example_id}").exists()
+        )
         generated_model_names = [override_generated_model_name, base_generated_model_name] if is_override else [base_generated_model_name]
         legacy_score, rubric_score, resolved_model_name = load_score_from_candidate_names(
             example_dir,
@@ -158,12 +162,31 @@ def build_overall_summary(default_scores, cap_scores):
     }
 
 
+def build_summary_result(args, overall, bucket_summary, override_ids):
+    return {
+        "eval_model": args.eval_model,
+        "weights": {
+            "legacy": args.legacy_weight,
+            "rubric": args.rubric_weight,
+        },
+        "override_ids": sorted(override_ids),
+        "overall": overall,
+        "overall_delta_cap_minus_default": {
+            "legacy": overall["capimagine"]["legacy"] - overall["default"]["legacy"],
+            "rubric": overall["capimagine"]["rubric"] - overall["default"]["rubric"],
+            "combined": overall["capimagine"]["combined"] - overall["default"]["combined"],
+        },
+        "buckets": bucket_summary,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--default_base_workspace", required=True)
-    parser.add_argument("--default_override_workspace", required=True)
+    parser.add_argument("--default_override_workspace", default=None)
     parser.add_argument("--cap_base_workspace", required=True)
-    parser.add_argument("--cap_override_workspace", required=True)
+    parser.add_argument("--cap_override_workspace", default=None)
+    parser.add_argument("--override_ids", nargs="*", type=int, default=DEFAULT_OVERRIDE_IDS)
     parser.add_argument("--eval_model", type=str, default="gpt-4o")
     parser.add_argument("--default_generated_model_name", type=str, default="gpt-5.4-mini")
     parser.add_argument("--default_override_generated_model_name", type=str, default="gpt-5.4-mini_default")
@@ -172,12 +195,13 @@ def main():
     parser.add_argument("--legacy_weight", type=float, default=0.5)
     parser.add_argument("--rubric_weight", type=float, default=0.5)
     parser.add_argument("--output_path", type=str, required=True)
+    parser.add_argument("--summary_output_path", type=str, default=None)
     args = parser.parse_args()
 
-    override_ids = set(LOW20_IDS)
+    override_ids = set(args.override_ids)
     default_scores = load_scores_for_setting(
         base_workspace=Path(args.default_base_workspace),
-        override_workspace=Path(args.default_override_workspace),
+        override_workspace=Path(args.default_override_workspace) if args.default_override_workspace else None,
         override_ids=override_ids,
         base_generated_model_name=args.default_generated_model_name,
         override_generated_model_name=args.default_override_generated_model_name,
@@ -187,7 +211,7 @@ def main():
     )
     cap_scores = load_scores_for_setting(
         base_workspace=Path(args.cap_base_workspace),
-        override_workspace=Path(args.cap_override_workspace),
+        override_workspace=Path(args.cap_override_workspace) if args.cap_override_workspace else None,
         override_ids=override_ids,
         base_generated_model_name=args.cap_generated_model_name,
         override_generated_model_name=args.cap_override_generated_model_name,
@@ -198,20 +222,10 @@ def main():
 
     overall = build_overall_summary(default_scores, cap_scores)
     bucket_summary = build_bucket_summary(default_scores, cap_scores)
+    summary_result = build_summary_result(args, overall, bucket_summary, override_ids)
 
     result = {
-        "eval_model": args.eval_model,
-        "weights": {
-            "legacy": args.legacy_weight,
-            "rubric": args.rubric_weight,
-        },
-        "override_ids": LOW20_IDS,
-        "overall": overall,
-        "overall_delta_cap_minus_default": {
-            "legacy": overall["capimagine"]["legacy"] - overall["default"]["legacy"],
-            "rubric": overall["capimagine"]["rubric"] - overall["default"]["rubric"],
-            "combined": overall["capimagine"]["combined"] - overall["default"]["combined"],
-        },
+        **summary_result,
         "buckets": bucket_summary,
         "per_example": {
             "default": default_scores,
@@ -222,6 +236,10 @@ def main():
     output_path = Path(args.output_path)
     output_path.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
     print(f"Wrote analysis to {output_path}")
+    if args.summary_output_path:
+        summary_output_path = Path(args.summary_output_path)
+        summary_output_path.write_text(json.dumps(summary_result, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"Wrote summary analysis to {summary_output_path}")
 
 
 if __name__ == "__main__":
